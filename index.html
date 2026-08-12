@@ -17,11 +17,9 @@ button{cursor:pointer}
 .app{width:min(100%,540px);margin:0 auto;padding:0 14px 82px}
 header{padding:22px 2px 12px}
 h1{font-size:1.35rem;margin:0;font-weight:800}
-.subtitle{display:none}
 .page{display:none}.page.active{display:block}
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 2px 8px}
 .topbar h2{margin:0;font-size:1.1rem}
-.icon-btn{background:transparent;border:0;color:var(--muted);font-size:1.25rem;padding:5px}
 .hero{background:var(--surface);border:1px solid var(--border);border-radius:15px;padding:16px;margin-bottom:10px}
 .hero-top{display:flex;justify-content:space-between;align-items:center;gap:12px}
 .workout-label,.label,.stat-label{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:800}
@@ -52,7 +50,7 @@ h1{font-size:1.35rem;margin:0;font-weight:800}
 .set{background:var(--surface2);border-radius:8px;padding:7px}
 .set.full{grid-column:1/-1}.set label{display:block;color:var(--muted);font-size:.62rem;text-transform:uppercase;font-weight:800;margin-bottom:4px}
 .set input,.set select,.settings-input{width:100%;background:#0e151f;border:1px solid var(--border);border-radius:6px;color:var(--text);padding:7px;outline:0}
-.set input:focus,.set select:focus{border-color:var(--accent)}
+.set input:focus,.set select:focus,.settings-input:focus{border-color:var(--accent)}
 .help,.card p{color:var(--muted);font-size:.72rem;line-height:1.45}
 .action{width:100%;border:0;border-radius:11px;padding:13px;background:var(--accent);color:var(--accent-dark);font-weight:900;margin-top:8px}
 .secondary{width:100%;border:1px solid var(--border);border-radius:10px;padding:10px;background:transparent;color:var(--muted);font-weight:700;margin-top:7px}
@@ -60,7 +58,7 @@ h1{font-size:1.35rem;margin:0;font-weight:800}
 .card h2{font-size:.88rem;margin:0 0 5px}.card p{margin:0}
 .notice{border-left:3px solid var(--orange);padding-left:9px;margin-top:9px}
 .tabs{position:fixed;bottom:0;left:0;right:0;background:rgba(20,27,38,.96);border-top:1px solid var(--border);display:flex;justify-content:center;z-index:5}
-.tabbar{width:min(100%,540px);display:grid;grid-template-columns:repeat(3,1fr)}
+.tabbar{width:min(100%,540px);display:grid;grid-template-columns:repeat(4,1fr)}
 .tab{border:0;background:transparent;color:var(--muted);padding:10px 5px 11px;font-size:.68rem;font-weight:800}
 .tab.active{color:var(--accent)}
 .tab-icon{display:block;font-size:1.05rem;line-height:1.1;margin-bottom:2px}
@@ -76,6 +74,10 @@ canvas{display:block;width:100%;height:190px;margin-top:8px}
 .workout-card h3{margin:0;font-size:.95rem}.workout-card p{margin:3px 0 10px;color:var(--muted);font-size:.72rem}
 .ex-list{margin:0;padding:0;list-style:none}.ex-list li{padding:7px 0;border-top:1px solid var(--border);font-size:.76rem}.ex-list span{display:block;color:var(--muted);font-size:.68rem;margin-top:2px}
 .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.68);display:flex;align-items:flex-end;justify-content:center;padding:10px;z-index:10}.modal{width:min(100%,540px);background:var(--surface);border:1px solid var(--border);border-radius:15px;padding:15px;max-height:85vh;overflow:auto}.modal h2{margin:0 0 5px}.modal p{color:var(--muted);font-size:.76rem;line-height:1.45}.modal-row{display:flex;gap:7px}.modal-row>*{flex:1}.hidden{display:none!important}.danger{color:var(--danger)!important}
+.form-group{margin-bottom:10px}.form-group label{display:block;font-size:.68rem;color:var(--muted);text-transform:uppercase;font-weight:800;margin-bottom:4px}
+.ex-goal-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.ex-goal-row label{font-size:.75rem;font-weight:700;flex:1}
+.ex-goal-row input{width:140px;flex:none}
 </style>
 </head>
 <body>
@@ -85,82 +87,80 @@ canvas{display:block;width:100%;height:190px;margin-top:8px}
   </header>
 
   <main id="page-workout" class="page active">
-  <section class="hero">
-    <div class="hero-top">
-      <div>
-        <div class="workout-label">Next workout</div>
-        <div class="workout-name" id="workout-name">Workout A</div>
+    <section class="hero">
+      <div class="hero-top">
+        <div>
+          <div class="workout-label">Next workout</div>
+          <div class="workout-name" id="workout-name">Workout A</div>
+        </div>
+        <div class="badge">~20 min</div>
       </div>
-      <div class="badge">~20 min</div>
-    </div>
-    <div class="progress"><div id="workout-progress"></div></div>
-    <div class="progress-text" id="progress-text">0 of 5 exercises logged</div>
-  </section>
+      <div class="progress"><div id="workout-progress"></div></div>
+      <div class="progress-text" id="progress-text">0 of 5 exercises logged</div>
+    </section>
 
-  <section class="stats">
-    <div class="stat">
-      <div class="stat-label">Sessions</div>
-      <div class="stat-value" id="session-count">0</div>
-      <div class="stat-note">completed workouts</div>
-    </div>
-    <div class="stat">
-      <div class="stat-label">Weight</div>
-      <div class="stat-value" id="weight-display">Loading…</div>
-      <div class="stat-note" id="weight-note">from your tracker</div>
-    </div>
-  </section>
-
-  <section class="card" id="weight-card">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
-      <h2 style="margin:0">Weight progress</h2>
-      <div style="display:flex;align-items:center;gap:8px">
-        <button class="user-toggle" onclick="toggleUserProfile()"><span id="user-profile-label">James</span> ▾</button>
-        <span id="weight-date" style="color:var(--muted);font-size:.72rem"></span>
+    <section class="stats">
+      <div class="stat">
+        <div class="stat-label">Sessions</div>
+        <div class="stat-value" id="session-count">0</div>
+        <div class="stat-note">completed workouts</div>
       </div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
-      <div>
-        <div class="stat-label">Goal</div>
-        <div class="stat-value" id="target-weight">165 lb</div>
+      <div class="stat">
+        <div class="stat-label">Weight</div>
+        <div class="stat-value" id="weight-display">Loading…</div>
+        <div class="stat-note" id="weight-note">from your tracker</div>
       </div>
-      <div>
-        <div class="stat-label">Remaining</div>
-        <div class="stat-value" id="remaining-weight">—</div>
+    </section>
+
+    <section class="card" id="weight-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+        <h2 style="margin:0">Weight progress</h2>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button class="user-toggle" onclick="toggleUserProfile()"><span id="user-profile-label">James</span> ▾</button>
+          <span id="weight-date" style="color:var(--muted);font-size:.72rem"></span>
+        </div>
       </div>
-    </div>
-    <div class="progress" style="margin-top:12px"><div id="weight-progress"></div></div>
-    <div class="progress-text" id="weight-progress-text">Loading weight data…</div>
-    <div class="notice" style="margin-top:10px"><p id="weight-trend">Loading weekly trend…</p></div>
-  </section>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+        <div>
+          <div class="stat-label">Goal Target</div>
+          <div class="stat-value" id="target-weight">—</div>
+        </div>
+        <div>
+          <div class="stat-label">Remaining</div>
+          <div class="stat-value" id="remaining-weight">—</div>
+        </div>
+      </div>
+      <div class="progress" style="margin-top:12px"><div id="weight-progress"></div></div>
+      <div class="progress-text" id="weight-progress-text">Loading weight data…</div>
+      <div class="notice" style="margin-top:10px"><p id="weight-trend">Loading weekly trend…</p></div>
+    </section>
 
-  <section class="timer">
-    <div class="timer-left">
-      <div class="timer-title">20-minute timer</div>
-      <div class="timer-display" id="timer">20:00</div>
-    </div>
-    <div class="timer-controls">
-      <button class="small-btn primary" id="timer-btn" onclick="toggleTimer()">Start</button>
-      <button class="small-btn" onclick="resetTimer()">Reset</button>
-    </div>
-  </section>
+    <section class="timer">
+      <div class="timer-left">
+        <div class="timer-title">20-minute timer</div>
+        <div class="timer-display" id="timer">20:00</div>
+      </div>
+      <div class="timer-controls">
+        <button class="small-btn primary" id="timer-btn" onclick="toggleTimer()">Start</button>
+        <button class="small-btn" onclick="resetTimer()">Reset</button>
+      </div>
+    </section>
 
-  <div id="workout"></div>
+    <div id="workout"></div>
 
-  <button class="action" onclick="completeWorkout()">Complete Workout</button>
-  <button class="secondary" onclick="openMinimum()">I only have a few minutes</button>
-
-  <button class="secondary" onclick="openSettings()">Settings</button>
+    <button class="action" onclick="completeWorkout()">Complete Workout</button>
+    <button class="secondary" onclick="openMinimum()">I only have a few minutes</button>
   </main>
 
   <main id="page-progress" class="page">
     <div class="topbar"><h2>Progress</h2></div>
     <div class="stats">
       <div class="stat"><div class="label">Current</div><div class="stat-value" id="progress-current">—</div></div>
-      <div class="stat"><div class="label">Goal</div><div class="stat-value" id="progress-goal-display">165 lb</div></div>
+      <div class="stat"><div class="label">Goal</div><div class="stat-value" id="progress-goal-display">—</div></div>
     </div>
     <div class="chart-box">
       <div class="chart-title">Body weight</div>
-      <div class="chart-sub">Your Sunday weigh-ins vs target line</div>
+      <div class="chart-sub">Sunday weigh-ins vs target line</div>
       <div class="chart-legend">
         <div class="legend-item"><div class="legend-color" style="background:var(--accent)"></div>Actual</div>
         <div class="legend-item"><div class="legend-color" style="background:var(--danger)"></div>Target pace</div>
@@ -169,7 +169,7 @@ canvas{display:block;width:100%;height:190px;margin-top:8px}
     </div>
     <div class="chart-box">
       <div class="chart-title">Weekly change</div>
-      <div class="chart-sub">Actual change versus your remaining weekly goal</div>
+      <div class="chart-sub">Actual change versus weekly goal</div>
       <canvas id="change-chart"></canvas>
     </div>
     <div class="card">
@@ -189,11 +189,32 @@ canvas{display:block;width:100%;height:190px;margin-top:8px}
     <div id="workout-info"></div>
   </main>
 
+  <main id="page-settings" class="page">
+    <div class="topbar"><h2>Settings</h2></div>
+    
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h2>Exercise Target Goals</h2>
+        <button class="user-toggle" onclick="toggleUserProfile()"><span id="settings-user-label">James</span> ▾</button>
+      </div>
+      <p style="margin-bottom:12px">Set target goals for each exercise (e.g. 15 reps, 10 reps @ 30lb):</p>
+      <div id="exercise-goals-container"></div>
+    </div>
+
+    <div class="card">
+      <h2>Data & Reset</h2>
+      <p style="margin-bottom:10px">Your weight goals & history sync directly from your Google Sheet.</p>
+      <div class="notice"><p><strong>Reset workout history:</strong> clears exercise history and completed-session count, then restarts at Workout A. Does not modify your Google Sheet.</p></div>
+      <button class="secondary danger" style="margin-top:12px" onclick="resetAll()">Reset workout data</button>
+    </div>
+  </main>
+
   <nav class="tabs">
     <div class="tabbar">
       <button class="tab active" data-page="workout" onclick="showPage('workout')"><span class="tab-icon">●</span>Workout</button>
       <button class="tab" data-page="progress" onclick="showPage('progress')"><span class="tab-icon">↗</span>Progress</button>
       <button class="tab" data-page="workouts" onclick="showPage('workouts')"><span class="tab-icon">☰</span>Exercises</button>
+      <button class="tab" data-page="settings" onclick="showPage('settings')"><span class="tab-icon">⚙</span>Settings</button>
     </div>
   </nav>
 </div>
@@ -248,20 +269,31 @@ let state = JSON.parse(localStorage.getItem("physique_state") || "null") || {
 
 if (!state.history) state.history = [];
 
+let currentUser = localStorage.getItem("physique_user") || "James";
+
+// User-defined exercise goals stored per profile
+let exerciseGoals = JSON.parse(localStorage.getItem("physique_exercise_goals") || "null") || {
+  James: { pushup: "15 reps", squat: "15 reps @ 30 lb" },
+  Megan: { pushup: "10 reps", squat: "12 reps" }
+};
+
+if (!exerciseGoals[currentUser]) exerciseGoals[currentUser] = {};
+
 let timer = 1200;
 let timerInterval = null;
-let currentUser = localStorage.getItem("physique_user") || "James";
 
 function save() {
   localStorage.setItem("physique_state", JSON.stringify(state));
+  localStorage.setItem("physique_exercise_goals", JSON.stringify(exerciseGoals));
 }
 
 function workoutData() { return workouts[state.next]; }
-
 function key(ex) { return state.next + ":" + ex.id; }
+function previousLog(ex) { return state.logs[key(ex)] || null; }
 
-function previousLog(ex) {
-  return state.logs[key(ex)] || null;
+function getExerciseGoal(exId, defaultReps) {
+  const userMap = exerciseGoals[currentUser] || {};
+  return userMap[exId] || defaultReps;
 }
 
 function render() {
@@ -286,6 +318,7 @@ function renderExercise(ex,i) {
   const options = ex.options.map(x => `<option ${old && old.resistance === x ? 'selected' : ''}>${x}</option>`).join("");
   const oldSet1 = old?.set1 || "";
   const oldSet2 = old?.set2 || "";
+  const targetGoal = getExerciseGoal(ex.id, ex.reps);
   const anchor = ex.anchor ? `<div class="help">Use the door hook high on a sturdy, properly closed door. Keep the movement controlled.</div>` : "";
 
   return `
@@ -294,18 +327,18 @@ function renderExercise(ex,i) {
         <div class="ex-number">${i+1}</div>
         <div class="ex-main">
           <div class="ex-name">${ex.name}</div>
-          <div class="ex-focus">${ex.focus} • Target ${ex.reps}</div>
+          <div class="ex-focus">${ex.focus} • Target: <strong>${targetGoal}</strong></div>
           ${old ? `<div class="last">Last time: <strong>${oldSet1} / ${oldSet2}</strong>${old.resistance ? ` • ${old.resistance}` : ""}</div>` : `<div class="last">First time — start easy enough to learn the movement.</div>`}
         </div>
       </div>
       <div class="sets">
         <div class="set">
           <label>Set 1</label>
-          <input type="text" inputmode="numeric" placeholder="${oldSet1 || ex.reps}" data-set="1">
+          <input type="text" inputmode="numeric" placeholder="${oldSet1 || 'reps'}" data-set="1">
         </div>
         <div class="set">
           <label>Set 2</label>
-          <input type="text" inputmode="numeric" placeholder="${oldSet2 || ex.reps}" data-set="2">
+          <input type="text" inputmode="numeric" placeholder="${oldSet2 || 'reps'}" data-set="2">
         </div>
         ${ex.options.length > 1 ? `
         <div class="set full">
@@ -377,21 +410,10 @@ function openMinimum() {
     <h2>Minimum workout</h2>
     <p>If life only gives you a few minutes, do <strong>one set of each</strong>. That's enough to keep the habit alive.</p>
     <div class="card">
-      ${w.exercises.map((e,i) => `<p style="margin:7px 0"><strong>${i+1}. ${e.name}</strong> — ${e.reps}</p>`).join("")}
+      ${w.exercises.map((e,i) => `<p style="margin:7px 0"><strong>${i+1}. ${e.name}</strong> — ${getExerciseGoal(e.id, e.reps)}</p>`).join("")}
     </div>
-    <p>When you're done, mark the normal workout complete. Don't add extra work to "make up" for missed days.</p>
+    <p>When you're done, mark the normal workout complete.</p>
     <div class="modal-row"><button class="small-btn primary" onclick="closeModal()">Got it</button></div>
-  `;
-  modal.classList.remove("hidden");
-}
-
-function openSettings() {
-  const modal = document.getElementById("modal");
-  document.getElementById("modal-content").innerHTML = `
-    <h2>Settings</h2>
-    <p>Your weight is pulled automatically from your public Google Sheet. The workout app does not store a separate body-weight value.</p>
-    <div class="notice"><p><strong>Reset workout history:</strong> clears exercise history and completed-session count, then starts again at Workout A. It does not affect your Google Sheet.</p></div>
-    <button class="secondary danger" onclick="resetAll()">Reset workout data</button>
   `;
   modal.classList.remove("hidden");
 }
@@ -399,7 +421,7 @@ function openSettings() {
 function resetAll() {
   if (!confirm("Delete all workout history and start over?")) return;
   state = {next:"A", sessions:0, logs:{}, history:[]};
-  save(); closeModal(); render();
+  save(); render(); showPage('workout');
 }
 
 function closeModal() {
@@ -442,18 +464,50 @@ function resetTimer() {
   updateTimer();
 }
 
-// ------------------------------
-// Live weight data from Google Sheets
-// ------------------------------
+function formatDiff(val, precision = 1) {
+  if (!Number.isFinite(val)) return "—";
+  const formatted = val.toFixed(precision);
+  return val > 0 ? `+${formatted}` : formatted;
+}
+
 const SHEET_ID = "13A4-e2_2WH10vcfF2ZM_CuJWVBP_teugCpyV7soEp-U";
-let dynamicStartWeight = 203.2;
-let dynamicGoalWeight = 165;
 
 function toggleUserProfile() {
   currentUser = currentUser === "James" ? "Megan" : "James";
   localStorage.setItem("physique_user", currentUser);
-  document.getElementById("user-profile-label").textContent = currentUser;
+  if (!exerciseGoals[currentUser]) exerciseGoals[currentUser] = {};
+  syncProfileUI();
   loadWeightData();
+  render();
+}
+
+function syncProfileUI() {
+  document.getElementById("user-profile-label").textContent = currentUser;
+  if(document.getElementById("settings-user-label")) {
+    document.getElementById("settings-user-label").textContent = currentUser;
+  }
+  renderSettingsExerciseGoals();
+}
+
+function renderSettingsExerciseGoals() {
+  const container = document.getElementById("exercise-goals-container");
+  if (!container) return;
+  const allEx = getAllExercises();
+  const userMap = exerciseGoals[currentUser] || {};
+
+  container.innerHTML = allEx.map(e => `
+    <div class="ex-goal-row">
+      <label>${e.name}</label>
+      <input type="text" class="settings-input" placeholder="${e.reps}" value="${userMap[e.id] || ''}" onchange="saveExerciseGoal('${e.id}', this.value)">
+    </div>
+  `).join("");
+}
+
+function saveExerciseGoal(exId, value) {
+  if (!exerciseGoals[currentUser]) exerciseGoals[currentUser] = {};
+  exerciseGoals[currentUser][exId] = value.trim();
+  save();
+  render();
 }
 
 function loadGoogleSheet(sheetName, query, callback) {
@@ -482,9 +536,8 @@ function loadGoogleSheet(sheetName, query, callback) {
 }
 
 function loadWeightData() {
-  document.getElementById("user-profile-label").textContent = currentUser;
+  syncProfileUI();
 
-  // James uses A, B, C, D | Megan uses A, H (Theoretical), F (Change), G (Target), E (Actual)
   const tqQuery = currentUser === "James" 
     ? "select A,B,C,D where B is not null order by A asc" 
     : "select A,H,F,G,E where H is not null order by A asc";
@@ -518,74 +571,51 @@ function loadWeightData() {
       const latest = rows[rows.length-1];
       weightRows = rows;
 
-      // Extract Goals sheet dynamically
-      const goalCol = currentUser === "James" ? "B" : "C";
-      loadGoogleSheet(
-        "Goals",
-        `select A,${goalCol} where A is not null limit 11`,
-        gData => {
-          if (!gData || !gData.table) return;
-          const goals = {};
-          gData.table.rows.forEach(r => {
-            const a = r.c?.[0]?.v;
-            const b = r.c?.[1]?.v;
-            if (a != null) goals[String(a).trim()] = b;
-          });
+      const startWeight = rows[0].weight;
+      const targetWeight = Number.isFinite(latest.target) ? latest.target : startWeight;
+      const isLoss = startWeight >= targetWeight;
 
-          dynamicStartWeight = Number(goals["Start Weight"]) || (currentUser === "James" ? 203.2 : 137);
-          dynamicGoalWeight = Number(goals["Target Weight"]) || (currentUser === "James" ? 165 : 140);
+      document.getElementById("weight-display").textContent = `${latest.weight.toFixed(1)} lb`;
+      document.getElementById("weight-note").textContent = latest.date ? `weighed ${latest.date}${latest.actualRaw === "x" ? " (est.)" : ""}` : "from tracker";
 
-          document.getElementById("weight-display").textContent = `${latest.weight.toFixed(1)} lb`;
-          document.getElementById("weight-note").textContent = latest.date ? `weighed ${latest.date}${latest.actualRaw === "x" ? " (est.)" : ""}` : "from tracker";
+      document.getElementById("target-weight").textContent = `${targetWeight.toFixed(1)} lb`;
+      if (document.getElementById("progress-goal-display")) {
+        document.getElementById("progress-goal-display").textContent = `${targetWeight.toFixed(1)} lb`;
+      }
 
-          document.getElementById("target-weight").textContent = `${dynamicGoalWeight.toFixed(0)} lb`;
-          if (document.getElementById("progress-goal-display")) {
-            document.getElementById("progress-goal-display").textContent = `${dynamicGoalWeight.toFixed(0)} lb`;
-          }
+      const totalToMove = Math.abs(startWeight - targetWeight);
+      const movedRaw = latest.weight - startWeight;
+      const remainingRaw = targetWeight - latest.weight;
+      
+      const movedAbs = Math.abs(movedRaw);
+      const pct = Math.max(0, Math.min(100, (movedAbs / Math.max(0.1, totalToMove)) * 100));
 
-          const isLoss = dynamicStartWeight >= dynamicGoalWeight;
-          const totalToMove = Math.abs(dynamicStartWeight - dynamicGoalWeight);
-          const moved = isLoss ? (dynamicStartWeight - latest.weight) : (latest.weight - dynamicStartWeight);
-          const remaining = Math.max(0, isLoss ? (latest.weight - dynamicGoalWeight) : (dynamicGoalWeight - latest.weight));
-          const pct = Math.max(0, Math.min(100, (moved / totalToMove) * 100));
+      document.getElementById("remaining-weight").textContent = `${formatDiff(remainingRaw)} lb`;
+      document.getElementById("weight-progress").style.width = `${pct}%`;
+      
+      const modeLabel = isLoss ? "loss" : "gain";
+      document.getElementById("weight-progress-text").textContent =
+        `${formatDiff(movedRaw)} lb ${modeLabel} of ${formatDiff(isLoss ? -totalToMove : totalToMove)} lb goal (${Math.round(pct)}%)`;
+      document.getElementById("weight-date").textContent = latest.date || "";
 
-          document.getElementById("remaining-weight").textContent = `${remaining.toFixed(1)} lb`;
-          document.getElementById("weight-progress").style.width = `${pct}%`;
-          document.getElementById("weight-progress-text").textContent =
-            `${moved.toFixed(1)} lb ${isLoss ? "lost" : "gained"} of ${totalToMove.toFixed(1)} lb goal (${Math.round(pct)}%)`;
-          document.getElementById("weight-date").textContent = latest.date || "";
+      let trendText = "";
+      if (Number.isFinite(latest.change)) {
+        trendText = `<strong>Latest weekly change:</strong> ${formatDiff(latest.change)} lb.`;
+      }
+      if (trendText) {
+        document.getElementById("weight-trend").innerHTML = trendText;
+      }
 
-          const weeklyTarget = Number(goals["Target Weekly Change"]);
-          const weeklyActual = Number(goals["Weekly Actual"]);
-          const weeklyGoalRate = Number(goals["Remaining Weekly Goal"]);
-
-          let trendText = "";
-          if (Number.isFinite(weeklyActual) && Number.isFinite(weeklyGoalRate)) {
-            trendText = `<strong>Weekly trend:</strong> ${weeklyActual.toFixed(2)} lb/wk. Target pace: ${Math.abs(weeklyGoalRate).toFixed(2)} lb/wk.`;
-          } else if (Number.isFinite(latest.change)) {
-            trendText = `<strong>Latest weekly change:</strong> ${(latest.change > 0 ? "+" : "") + latest.change.toFixed(1)} lb.`;
-          }
-          if (Number.isFinite(weeklyTarget)) {
-            trendText += ` <span style="color:var(--muted)">(Target rate: ${weeklyTarget.toFixed(1)} lb/wk)</span>`;
-          }
-          if (trendText) {
-            document.getElementById("weight-trend").innerHTML = trendText;
-          }
-
-          updateProgressPage(rows);
-        }
-      );
+      updateProgressPage(rows, startWeight, targetWeight);
     }
   );
 }
 
 function showWeightError() {
   document.getElementById("weight-display").textContent = "Unavailable";
-  document.getElementById("weight-note").textContent = "couldn't read the sheet";
-  document.getElementById("weight-progress-text").textContent =
-    "Open the app while connected to the internet to load your tracker.";
-  document.getElementById("weight-trend").innerHTML =
-    "<strong>Weight data unavailable.</strong> Your workouts still work normally.";
+  document.getElementById("weight-note").textContent = "couldn't read sheet";
+  document.getElementById("weight-progress-text").textContent = "Open app online to sync your tracker.";
+  document.getElementById("weight-trend").innerHTML = "<strong>Weight data unavailable.</strong> Workouts work normally.";
 }
 
 function showPage(page) {
@@ -593,7 +623,6 @@ function showPage(page) {
   document.getElementById("page-" + page).classList.add("active");
   document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.page === page));
 
-  // Reset scroll position to top when navigating to new tab
   window.scrollTo({top: 0, behavior: "instant"});
 
   if (page === "progress") {
@@ -603,6 +632,7 @@ function showPage(page) {
     setTimeout(drawCharts, 50);
   }
   if (page === "workouts") renderWorkoutInfo();
+  if (page === "settings") syncProfileUI();
 }
 
 function renderWorkoutInfo() {
@@ -612,14 +642,13 @@ function renderWorkoutInfo() {
       <h3>${w.name}</h3>
       <p>${w.description}</p>
       <ul class="ex-list">
-        ${w.exercises.map(e => `<li><strong>${e.name}</strong><span>${e.focus} • ${e.reps}${e.anchor ? " • door anchor" : ""}</span></li>`).join("")}
+        ${w.exercises.map(e => `<li><strong>${e.name}</strong><span>${e.focus} • Target: ${getExerciseGoal(e.id, e.reps)}${e.anchor ? " • door anchor" : ""}</span></li>`).join("")}
       </ul>
     </div>
   `).join("") + `
     <div class="card">
       <h2>Progression</h2>
-      <p>Most exercises use a rep range. When you can hit the top of the range on both sets with good form, increase resistance or choose a harder variation. Keep roughly 1–3 good reps in reserve.</p>
-      <div class="notice"><p><strong>Door anchor:</strong> use only on a sturdy, properly closed door as intended by the band's manufacturer. If it feels unstable, don't use it.</p></div>
+      <p>Most exercises use a rep range. When you hit the top of your target goal on both sets with good form, increase resistance or rep targets in Settings.</p>
     </div>
   `;
 }
@@ -645,7 +674,6 @@ function drawLineChart(canvasId, data, opts) {
     ctx.fillText(opts.format(v),4,yy+3);
   }
 
-  // Draw explicit visible reference line at 0.0 if zero is within min/max bounds
   if (min <= 0 && max >= 0) {
     const zeroY = y(0);
     ctx.strokeStyle = "#8996a8";
@@ -666,7 +694,6 @@ function drawLineChart(canvasId, data, opts) {
     if((data.length-1)%step!==0) ctx.fillText(data[data.length-1].label,x(data.length-1)-13,h-7);
   }
 
-  // Draw target line if provided
   const hasTarget = data.some(p => Number.isFinite(p.target));
   if (hasTarget) {
     ctx.strokeStyle = "#e77c7c"; ctx.lineWidth = 1.5; ctx.setLineDash([4, 4]); ctx.beginPath();
@@ -680,7 +707,6 @@ function drawLineChart(canvasId, data, opts) {
     ctx.stroke(); ctx.setLineDash([]);
   }
 
-  // Main actual weight line
   ctx.strokeStyle="#69d391";ctx.lineWidth=2.5;ctx.beginPath();
   data.forEach((p,i)=>i?ctx.lineTo(x(i),y(p.value)):ctx.moveTo(x(i),y(p.value)));ctx.stroke();
   ctx.fillStyle="#69d391";
@@ -695,7 +721,7 @@ function drawCharts() {
   const targets = weightRows.filter(r=>Number.isFinite(r.target)).map(r=>r.target);
   const changes = weightRows.filter(r=>Number.isFinite(r.change)).map(r=>r.change);
   
-  const allWeightVals = [...weights, ...targets, dynamicGoalWeight];
+  const allWeightVals = [...weights, ...targets];
   const wmin=Math.floor(Math.min(...allWeightVals)-2), wmax=Math.ceil(Math.max(...allWeightVals)+2);
   
   drawLineChart("weight-chart", weightRows.map(r=>({label:r.shortDate, value:r.weight, target:r.target})), {
@@ -703,11 +729,10 @@ function drawCharts() {
   });
 
   if(changes.length){
-    // Ensure bounds force 0.0 to stay nicely formatted and visible on screen
     const cmin=Math.min(Math.floor(Math.min(...changes)-0.5), -1);
     const cmax=Math.max(Math.ceil(Math.max(...changes)+0.5), 1);
     drawLineChart("change-chart", weightRows.filter(r=>Number.isFinite(r.change)).map(r=>({label:r.shortDate,value:r.change})), {
-      min:cmin,max:cmax,format:v=>(v>0?"+":"")+v.toFixed(1)
+      min:cmin,max:cmax,format:v=>formatDiff(v)
     });
   }
 }
@@ -746,7 +771,7 @@ function renderExerciseHistory() {
   });
 
   if (!historyEntries.length) {
-    container.innerHTML = `<div class="help" style="margin-top:8px">No logged sets for this exercise yet. Complete workouts to see your rep & weight progression!</div>`;
+    container.innerHTML = `<div class="help" style="margin-top:8px">No logged sets for this exercise yet.</div>`;
     return;
   }
 
@@ -758,21 +783,20 @@ function renderExerciseHistory() {
   `).join("");
 }
 
-function updateProgressPage(dataRows) {
+function updateProgressPage(dataRows, startWeight, targetWeight) {
   weightRows=dataRows;
   const latest=dataRows[dataRows.length-1];
   if(!latest)return;
   document.getElementById("progress-current").textContent=latest.weight.toFixed(1)+" lb";
   
-  const isLoss = dynamicStartWeight >= dynamicGoalWeight;
-  const moved = isLoss ? (dynamicStartWeight - latest.weight) : (latest.weight - dynamicStartWeight);
-  const remaining = Math.max(0, isLoss ? (latest.weight - dynamicGoalWeight) : (dynamicGoalWeight - latest.weight));
+  const movedRaw = latest.weight - startWeight;
+  const remainingRaw = targetWeight - latest.weight;
 
   document.getElementById("weight-summary").innerHTML=`
-    <div class="history-row"><span>${isLoss ? "Lost" : "Gained"}</span><strong>${moved.toFixed(1)} lb</strong></div>
-    <div class="history-row"><span>Remaining</span><strong>${remaining.toFixed(1)} lb</strong></div>
+    <div class="history-row"><span>Total Change</span><strong>${formatDiff(movedRaw)} lb</strong></div>
+    <div class="history-row"><span>Remaining to Goal</span><strong>${formatDiff(remainingRaw)} lb</strong></div>
     <div class="history-row"><span>Latest weigh-in</span><strong>${latest.shortDate}${latest.actualRaw === "x" ? " (est.)" : ""}</strong></div>
-    <div class="history-row"><span>Latest weekly change</span><strong>${Number.isFinite(latest.change)?(latest.change>0?"+":"")+latest.change.toFixed(1)+" lb":"—"}</strong></div>
+    <div class="history-row"><span>Latest weekly change</span><strong>${formatDiff(latest.change)} lb</strong></div>
   `;
   drawCharts();
 }
