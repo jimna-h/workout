@@ -542,85 +542,100 @@ function loadGoogleSheet(sheetName, query, callback) {
 function loadWeightData() {
   syncProfileUI();
 
-  const tqQuery = currentUser === "James" 
-    ? "select A,B,C,D where B is not null order by A asc" 
-    : "select A,H,F,G,E where H is not null order by A asc";
-
+  // 1) Grab Target Weight from Goals tab (Col B for James, Col C for Megan where Row Label = 'Target Weight')
+  const goalCol = currentUser === "James" ? "B" : "C";
   loadGoogleSheet(
-    "Tracking",
-    tqQuery,
-    data => {
-      if (!data || !data.table || !data.table.rows.length) {
-        showWeightError();
-        return;
+    "Goals",
+    `select ${goalCol} where A = 'Target Weight'`,
+    goalsData => {
+      let targetWeightFromGoals = NaN;
+      if (goalsData?.table?.rows?.length) {
+        const val = goalsData.table.rows[0].c[0]?.v;
+        if (val != null && !isNaN(val)) targetWeightFromGoals = Number(val);
       }
 
-      const rows = data.table.rows.map(r => {
-        const c = r.c || [];
-        const rawDate = c[0]?.f ?? c[0]?.v ?? "";
-        const dateObj = c[0]?.v ? new Date(c[0].v) : null;
-        const shortDate = dateObj && !isNaN(dateObj) ? dateObj.toLocaleDateString(undefined,{month:"short",day:"numeric"}) : String(rawDate).slice(0,10);
-        return {
-          date: rawDate,
-          shortDate,
-          weight: Number(c[1]?.v),
-          change: c[2]?.v == null ? NaN : Number(c[2].v),
-          target: c[3]?.v == null ? NaN : Number(c[3].v),
-          actualRaw: c[4]?.v != null ? String(c[4].v) : ""
-        };
-      }).filter(r => Number.isFinite(r.weight));
+      // 2) Fetch tracking history from Tracking tab
+      const tqQuery = currentUser === "James" 
+        ? "select A,B,C,D,E where B is not null order by A asc" 
+        : "select A,H,F,G,E where H is not null order by A asc";
 
-      if (!rows.length) { showWeightError(); return; }
+      loadGoogleSheet(
+        "Tracking",
+        tqQuery,
+        data => {
+          if (!data || !data.table || !data.table.rows.length) {
+            showWeightError();
+            return;
+          }
 
-      const latest = rows[rows.length-1];
-      weightRows = rows;
+          const rows = data.table.rows.map(r => {
+            const c = r.c || [];
+            const rawDate = c[0]?.f ?? c[0]?.v ?? "";
+            const dateObj = c[0]?.v ? new Date(c[0].v) : null;
+            const shortDate = dateObj && !isNaN(dateObj) ? dateObj.toLocaleDateString(undefined,{month:"short",day:"numeric"}) : String(rawDate).slice(0,10);
+            return {
+              date: rawDate,
+              shortDate,
+              weight: Number(c[1]?.v),
+              change: c[2]?.v == null ? NaN : Number(c[2].v),
+              target: c[3]?.v == null ? NaN : Number(c[3].v),
+              actualRaw: c[4]?.v != null ? String(c[4].v) : ""
+            };
+          }).filter(r => Number.isFinite(r.weight));
 
-      // Extract ultimate target goal weight from latest entry
-      const startWeight = rows[0].weight;
-      const finalGoalTarget = Number.isFinite(latest.target) ? latest.target : startWeight;
+          if (!rows.length) { showWeightError(); return; }
 
-      document.getElementById("weight-display").textContent = `${latest.weight.toFixed(1)} lb`;
-      document.getElementById("weight-note").textContent = latest.date ? `weighed ${latest.date}${latest.actualRaw === "x" ? " (est.)" : ""}` : "from tracker";
+          const latest = rows[rows.length-1];
+          weightRows = rows;
 
-      document.getElementById("target-weight").textContent = `${finalGoalTarget.toFixed(1)} lb`;
-      if (document.getElementById("progress-goal-display")) {
-        document.getElementById("progress-goal-display").textContent = `${finalGoalTarget.toFixed(1)} lb`;
-      }
+          const startWeight = rows[0].weight;
+          
+          // Primary target is pulled from Goals tab; falls back to Tracking line target or start weight
+          const finalGoalTarget = Number.isFinite(targetWeightFromGoals) 
+            ? targetWeightFromGoals 
+            : (Number.isFinite(latest.target) ? latest.target : startWeight);
 
-      // Check overarching goal type based on start weight vs final target
-      const isLoss = startWeight >= finalGoalTarget;
-      const totalToMove = Math.abs(startWeight - finalGoalTarget);
-      
-      // Calculate true directional movement relative to starting baseline
-      const actualProgress = isLoss 
-        ? startWeight - latest.weight 
-        : latest.weight - startWeight;
+          document.getElementById("weight-display").textContent = `${latest.weight.toFixed(1)} lb`;
+          document.getElementById("weight-note").textContent = latest.date ? `weighed ${latest.date}${latest.actualRaw === "x" ? " (est.)" : ""}` : "from tracker";
 
-      const remainingRaw = finalGoalTarget - latest.weight;
-      const movedRaw = latest.weight - startWeight;
-      
-      // Calculate percentage against total overall goal (clamped 0 to 100)
-      const pct = totalToMove === 0 
-        ? 100 
-        : Math.max(0, Math.min(100, (actualProgress / totalToMove) * 100));
+          document.getElementById("target-weight").textContent = `${finalGoalTarget.toFixed(1)} lb`;
+          if (document.getElementById("progress-goal-display")) {
+            document.getElementById("progress-goal-display").textContent = `${finalGoalTarget.toFixed(1)} lb`;
+          }
 
-      document.getElementById("remaining-weight").textContent = `${formatDiff(remainingRaw)} lb`;
-      document.getElementById("weight-progress").style.width = `${pct}%`;
-      
-      const modeLabel = isLoss ? "loss" : "gain";
-      document.getElementById("weight-progress-text").textContent =
-        `${formatDiff(movedRaw)} lb ${modeLabel} of ${formatDiff(isLoss ? -totalToMove : totalToMove)} lb goal (${Math.round(pct)}%)`;
-      document.getElementById("weight-date").textContent = latest.date || "";
+          const isLoss = startWeight >= finalGoalTarget;
+          const totalToMove = Math.abs(startWeight - finalGoalTarget);
+          
+          const actualProgress = isLoss 
+            ? startWeight - latest.weight 
+            : latest.weight - startWeight;
 
-      let trendText = "";
-      if (Number.isFinite(latest.change)) {
-        trendText = `<strong>Latest weekly change:</strong> ${formatDiff(latest.change)} lb.`;
-      }
-      if (trendText) {
-        document.getElementById("weight-trend").innerHTML = trendText;
-      }
+          const remainingRaw = finalGoalTarget - latest.weight;
+          const movedRaw = latest.weight - startWeight;
+          
+          const pct = totalToMove === 0 
+            ? 100 
+            : Math.max(0, Math.min(100, (actualProgress / totalToMove) * 100));
 
-      updateProgressPage(rows, startWeight, finalGoalTarget);
+          document.getElementById("remaining-weight").textContent = `${formatDiff(remainingRaw)} lb`;
+          document.getElementById("weight-progress").style.width = `${pct}%`;
+          
+          const modeLabel = isLoss ? "loss" : "gain";
+          document.getElementById("weight-progress-text").textContent =
+            `${formatDiff(movedRaw)} lb ${modeLabel} of ${formatDiff(isLoss ? -totalToMove : totalToMove)} lb goal (${Math.round(pct)}%)`;
+          document.getElementById("weight-date").textContent = latest.date || "";
+
+          let trendText = "";
+          if (Number.isFinite(latest.change)) {
+            trendText = `<strong>Latest weekly change:</strong> ${formatDiff(latest.change)} lb.`;
+          }
+          if (trendText) {
+            document.getElementById("weight-trend").innerHTML = trendText;
+          }
+
+          updateProgressPage(rows, startWeight, finalGoalTarget);
+        }
+      );
     }
   );
 }
