@@ -272,7 +272,6 @@ if (!state.history) state.history = [];
 
 let currentUser = localStorage.getItem("physique_user") || "James";
 
-// User-defined numeric values per exercise profile
 let exerciseGoals = JSON.parse(localStorage.getItem("physique_exercise_goals_v2") || "null") || {
   James: { pushup: "15", squat: "15" },
   Megan: { pushup: "10", squat: "12" }
@@ -576,30 +575,31 @@ function loadWeightData() {
       const latest = rows[rows.length-1];
       weightRows = rows;
 
+      // Extract ultimate target goal weight from latest entry
       const startWeight = rows[0].weight;
-      const targetWeight = Number.isFinite(latest.target) ? latest.target : startWeight;
-      
+      const finalGoalTarget = Number.isFinite(latest.target) ? latest.target : startWeight;
+
       document.getElementById("weight-display").textContent = `${latest.weight.toFixed(1)} lb`;
       document.getElementById("weight-note").textContent = latest.date ? `weighed ${latest.date}${latest.actualRaw === "x" ? " (est.)" : ""}` : "from tracker";
 
-      document.getElementById("target-weight").textContent = `${targetWeight.toFixed(1)} lb`;
+      document.getElementById("target-weight").textContent = `${finalGoalTarget.toFixed(1)} lb`;
       if (document.getElementById("progress-goal-display")) {
-        document.getElementById("progress-goal-display").textContent = `${targetWeight.toFixed(1)} lb`;
+        document.getElementById("progress-goal-display").textContent = `${finalGoalTarget.toFixed(1)} lb`;
       }
 
-      // Directional progress evaluation
-      const isLoss = startWeight >= targetWeight;
-      const totalToMove = Math.abs(startWeight - targetWeight);
+      // Check overarching goal type based on start weight vs final target
+      const isLoss = startWeight >= finalGoalTarget;
+      const totalToMove = Math.abs(startWeight - finalGoalTarget);
       
-      // Calculate actual directional movement toward target goal
+      // Calculate true directional movement relative to starting baseline
       const actualProgress = isLoss 
         ? startWeight - latest.weight 
         : latest.weight - startWeight;
 
-      const remainingRaw = targetWeight - latest.weight;
+      const remainingRaw = finalGoalTarget - latest.weight;
       const movedRaw = latest.weight - startWeight;
       
-      // Calculate clamped percentage (floored at 0% for wrong-direction movement)
+      // Calculate percentage against total overall goal (clamped 0 to 100)
       const pct = totalToMove === 0 
         ? 100 
         : Math.max(0, Math.min(100, (actualProgress / totalToMove) * 100));
@@ -620,7 +620,7 @@ function loadWeightData() {
         document.getElementById("weight-trend").innerHTML = trendText;
       }
 
-      updateProgressPage(rows, startWeight, targetWeight);
+      updateProgressPage(rows, startWeight, finalGoalTarget);
     }
   );
 }
