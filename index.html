@@ -40,6 +40,8 @@ h1{font-size:1.35rem;margin:0;font-weight:800}
 .timer-controls{display:flex;gap:6px}
 .small-btn,.btn{border:1px solid var(--border);background:transparent;color:var(--text);border-radius:8px;padding:7px 10px;font-weight:750}
 .small-btn.primary,.btn.primary{background:var(--accent);color:var(--accent-dark);border-color:var(--accent)}
+.user-toggle{background:var(--surface2);border:1px solid var(--border);color:var(--muted);border-radius:20px;padding:3px 10px;font-size:.72rem;font-weight:800;display:flex;align-items:center;gap:6px;cursor:pointer}
+.user-toggle span.active-user{color:var(--accent);font-weight:900}
 .section-title{display:flex;justify-content:space-between;margin:17px 2px 8px;color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;font-weight:800}
 .exercise{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px}
 .ex-top{display:flex;gap:9px}
@@ -109,9 +111,12 @@ canvas{display:block;width:100%;height:190px;margin-top:8px}
   </section>
 
   <section class="card" id="weight-card">
-    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
       <h2 style="margin:0">Weight progress</h2>
-      <span id="weight-date" style="color:var(--muted);font-size:.72rem"></span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="user-toggle" onclick="toggleUserProfile()"><span id="user-profile-label">James</span> ▾</button>
+        <span id="weight-date" style="color:var(--muted);font-size:.72rem"></span>
+      </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
       <div>
@@ -151,7 +156,7 @@ canvas{display:block;width:100%;height:190px;margin-top:8px}
     <div class="topbar"><h2>Progress</h2></div>
     <div class="stats">
       <div class="stat"><div class="label">Current</div><div class="stat-value" id="progress-current">—</div></div>
-      <div class="stat"><div class="label">Goal</div><div class="stat-value">165 lb</div></div>
+      <div class="stat"><div class="label">Goal</div><div class="stat-value" id="progress-goal-display">165 lb</div></div>
     </div>
     <div class="chart-box">
       <div class="chart-title">Body weight</div>
@@ -245,6 +250,7 @@ if (!state.history) state.history = [];
 
 let timer = 1200;
 let timerInterval = null;
+let currentUser = localStorage.getItem("physique_user") || "James";
 
 function save() {
   localStorage.setItem("physique_state", JSON.stringify(state));
@@ -440,8 +446,15 @@ function resetTimer() {
 // Live weight data from Google Sheets
 // ------------------------------
 const SHEET_ID = "13A4-e2_2WH10vcfF2ZM_CuJWVBP_teugCpyV7soEp-U";
-const FINAL_GOAL_WEIGHT = 165;
-const START_WEIGHT = 203.2;
+let dynamicStartWeight = 203.2;
+let dynamicGoalWeight = 165;
+
+function toggleUserProfile() {
+  currentUser = currentUser === "James" ? "Megan" : "James";
+  localStorage.setItem("physique_user", currentUser);
+  document.getElementById("user-profile-label").textContent = currentUser;
+  loadWeightData();
+}
 
 function loadGoogleSheet(sheetName, query, callback) {
   const callbackName = "sheetCallback_" + Date.now() + "_" + Math.floor(Math.random() * 100000);
@@ -469,9 +482,16 @@ function loadGoogleSheet(sheetName, query, callback) {
 }
 
 function loadWeightData() {
+  document.getElementById("user-profile-label").textContent = currentUser;
+
+  // James uses A, B, C, D | Megan uses A, H (Theoretical), F (Change), G (Target), E (Actual)
+  const tqQuery = currentUser === "James" 
+    ? "select A,B,C,D where B is not null order by A asc" 
+    : "select A,H,F,G,E where H is not null order by A asc";
+
   loadGoogleSheet(
     "Tracking",
-    "select A,B,C,D where B is not null order by A asc",
+    tqQuery,
     data => {
       if (!data || !data.table || !data.table.rows.length) {
         showWeightError();
@@ -488,7 +508,8 @@ function loadWeightData() {
           shortDate,
           weight: Number(c[1]?.v),
           change: c[2]?.v == null ? NaN : Number(c[2].v),
-          target: c[3]?.v == null ? NaN : Number(c[3].v)
+          target: c[3]?.v == null ? NaN : Number(c[3].v),
+          actualRaw: c[4]?.v != null ? String(c[4].v) : ""
         };
       }).filter(r => Number.isFinite(r.weight));
 
@@ -497,59 +518,63 @@ function loadWeightData() {
       const latest = rows[rows.length-1];
       weightRows = rows;
 
-      document.getElementById("weight-display").textContent = `${latest.weight.toFixed(1)} lb`;
-      document.getElementById("weight-note").textContent = latest.date ? `weighed ${latest.date}` : "from your tracker";
+      // Extract Goals sheet dynamically
+      const goalCol = currentUser === "James" ? "B" : "C";
+      loadGoogleSheet(
+        "Goals",
+        `select A,${goalCol} where A is not null limit 11`,
+        gData => {
+          if (!gData || !gData.table) return;
+          const goals = {};
+          gData.table.rows.forEach(r => {
+            const a = r.c?.[0]?.v;
+            const b = r.c?.[1]?.v;
+            if (a != null) goals[String(a).trim()] = b;
+          });
 
-      // Focus strictly on Ultimate End Goal (165 lb)
-      document.getElementById("target-weight").textContent = `${FINAL_GOAL_WEIGHT.toFixed(0)} lb`;
+          dynamicStartWeight = Number(goals["Start Weight"]) || (currentUser === "James" ? 203.2 : 137);
+          dynamicGoalWeight = Number(goals["Target Weight"]) || (currentUser === "James" ? 165 : 140);
 
-      const totalToLose = START_WEIGHT - FINAL_GOAL_WEIGHT;
-      const lost = START_WEIGHT - latest.weight;
-      const remaining = Math.max(0, latest.weight - FINAL_GOAL_WEIGHT);
-      const pct = Math.max(0, Math.min(100, (lost / totalToLose) * 100));
+          document.getElementById("weight-display").textContent = `${latest.weight.toFixed(1)} lb`;
+          document.getElementById("weight-note").textContent = latest.date ? `weighed ${latest.date}${latest.actualRaw === "x" ? " (est.)" : ""}` : "from tracker";
 
-      document.getElementById("remaining-weight").textContent = `${remaining.toFixed(1)} lb`;
-      document.getElementById("weight-progress").style.width = `${pct}%`;
-      document.getElementById("weight-progress-text").textContent =
-        `${lost.toFixed(1)} lb lost of ${totalToLose.toFixed(1)} lb goal (${Math.round(pct)}%)`;
-      document.getElementById("weight-date").textContent = latest.date || "";
+          document.getElementById("target-weight").textContent = `${dynamicGoalWeight.toFixed(0)} lb`;
+          if (document.getElementById("progress-goal-display")) {
+            document.getElementById("progress-goal-display").textContent = `${dynamicGoalWeight.toFixed(0)} lb`;
+          }
 
-      const weeklyTargetText = Number.isFinite(latest.target) ? ` (Weekly Target: ${latest.target.toFixed(1)} lb)` : "";
-      document.getElementById("weight-trend").innerHTML =
-        `<strong>Latest weekly change:</strong> ${Number.isFinite(latest.change) ? (latest.change > 0 ? "+" : "") + latest.change.toFixed(1) + " lb" : "—"}${weeklyTargetText}.`;
+          const isLoss = dynamicStartWeight >= dynamicGoalWeight;
+          const totalToMove = Math.abs(dynamicStartWeight - dynamicGoalWeight);
+          const moved = isLoss ? (dynamicStartWeight - latest.weight) : (latest.weight - dynamicStartWeight);
+          const remaining = Math.max(0, isLoss ? (latest.weight - dynamicGoalWeight) : (dynamicGoalWeight - latest.weight));
+          const pct = Math.max(0, Math.min(100, (moved / totalToMove) * 100));
 
-      updateProgressPage(rows);
-    }
-  );
+          document.getElementById("remaining-weight").textContent = `${remaining.toFixed(1)} lb`;
+          document.getElementById("weight-progress").style.width = `${pct}%`;
+          document.getElementById("weight-progress-text").textContent =
+            `${moved.toFixed(1)} lb ${isLoss ? "lost" : "gained"} of ${totalToMove.toFixed(1)} lb goal (${Math.round(pct)}%)`;
+          document.getElementById("weight-date").textContent = latest.date || "";
 
-  loadGoogleSheet(
-    "Goals",
-    "select A,B where A is not null limit 11",
-    data => {
-      if (!data || !data.table) return;
-      const goals = {};
-      data.table.rows.forEach(r => {
-        const a = r.c?.[0]?.v;
-        const b = r.c?.[1]?.v;
-        if (a != null) goals[String(a).trim()] = b;
-      });
+          const weeklyTarget = Number(goals["Target Weekly Change"]);
+          const weeklyActual = Number(goals["Weekly Actual"]);
+          const weeklyGoalRate = Number(goals["Remaining Weekly Goal"]);
 
-      const weeklyTarget = Number(goals["Target Weight"]);
-      const weeklyActual = Number(goals["Weekly Actual"]);
-      const weeklyGoalRate = Number(goals["Remaining Weekly Goal"]);
+          let trendText = "";
+          if (Number.isFinite(weeklyActual) && Number.isFinite(weeklyGoalRate)) {
+            trendText = `<strong>Weekly trend:</strong> ${weeklyActual.toFixed(2)} lb/wk. Target pace: ${Math.abs(weeklyGoalRate).toFixed(2)} lb/wk.`;
+          } else if (Number.isFinite(latest.change)) {
+            trendText = `<strong>Latest weekly change:</strong> ${(latest.change > 0 ? "+" : "") + latest.change.toFixed(1)} lb.`;
+          }
+          if (Number.isFinite(weeklyTarget)) {
+            trendText += ` <span style="color:var(--muted)">(Target rate: ${weeklyTarget.toFixed(1)} lb/wk)</span>`;
+          }
+          if (trendText) {
+            document.getElementById("weight-trend").innerHTML = trendText;
+          }
 
-      let trendText = "";
-      if (Number.isFinite(weeklyActual) && Number.isFinite(weeklyGoalRate)) {
-        trendText = `<strong>Weekly trend:</strong> ${weeklyActual.toFixed(2)} lb/wk. Target pace: ${Math.abs(weeklyGoalRate).toFixed(2)} lb/wk.`;
-      }
-      if (Number.isFinite(weeklyTarget)) {
-        trendText += ` <span style="color:var(--muted)">(This week's target: ${weeklyTarget.toFixed(1)} lb)</span>`;
-      }
-      if (trendText) {
-        document.getElementById("weight-trend").innerHTML = trendText;
-      }
-
-      drawCharts();
+          updateProgressPage(rows);
+        }
+      );
     }
   );
 }
@@ -567,6 +592,9 @@ function showPage(page) {
   document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
   document.getElementById("page-" + page).classList.add("active");
   document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.page === page));
+
+  // Reset scroll position to top when navigating to new tab
+  window.scrollTo({top: 0, behavior: "instant"});
 
   if (page === "progress") {
     loadWeightData();
@@ -616,6 +644,20 @@ function drawLineChart(canvasId, data, opts) {
     ctx.beginPath();ctx.moveTo(pad.l,yy);ctx.lineTo(w-pad.r,yy);ctx.stroke();
     ctx.fillText(opts.format(v),4,yy+3);
   }
+
+  // Draw explicit visible reference line at 0.0 if zero is within min/max bounds
+  if (min <= 0 && max >= 0) {
+    const zeroY = y(0);
+    ctx.strokeStyle = "#8996a8";
+    ctx.lineWidth = 1.2;
+    ctx.setLineDash([2, 3]);
+    ctx.beginPath();
+    ctx.moveTo(pad.l, zeroY);
+    ctx.lineTo(w - pad.r, zeroY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
   if(data.length===1){
     ctx.fillText(data[0].label,x(0)-12,h-7);
   } else {
@@ -624,7 +666,7 @@ function drawLineChart(canvasId, data, opts) {
     if((data.length-1)%step!==0) ctx.fillText(data[data.length-1].label,x(data.length-1)-13,h-7);
   }
 
-  // Draw target line if provided (Tracking!D)
+  // Draw target line if provided
   const hasTarget = data.some(p => Number.isFinite(p.target));
   if (hasTarget) {
     ctx.strokeStyle = "#e77c7c"; ctx.lineWidth = 1.5; ctx.setLineDash([4, 4]); ctx.beginPath();
@@ -653,7 +695,7 @@ function drawCharts() {
   const targets = weightRows.filter(r=>Number.isFinite(r.target)).map(r=>r.target);
   const changes = weightRows.filter(r=>Number.isFinite(r.change)).map(r=>r.change);
   
-  const allWeightVals = [...weights, ...targets, 165];
+  const allWeightVals = [...weights, ...targets, dynamicGoalWeight];
   const wmin=Math.floor(Math.min(...allWeightVals)-2), wmax=Math.ceil(Math.max(...allWeightVals)+2);
   
   drawLineChart("weight-chart", weightRows.map(r=>({label:r.shortDate, value:r.weight, target:r.target})), {
@@ -661,7 +703,9 @@ function drawCharts() {
   });
 
   if(changes.length){
-    const cmin=Math.floor(Math.min(...changes,-0.77)-.5), cmax=Math.ceil(Math.max(...changes,0)+.5);
+    // Ensure bounds force 0.0 to stay nicely formatted and visible on screen
+    const cmin=Math.min(Math.floor(Math.min(...changes)-0.5), -1);
+    const cmax=Math.max(Math.ceil(Math.max(...changes)+0.5), 1);
     drawLineChart("change-chart", weightRows.filter(r=>Number.isFinite(r.change)).map(r=>({label:r.shortDate,value:r.change})), {
       min:cmin,max:cmax,format:v=>(v>0?"+":"")+v.toFixed(1)
     });
@@ -719,14 +763,15 @@ function updateProgressPage(dataRows) {
   const latest=dataRows[dataRows.length-1];
   if(!latest)return;
   document.getElementById("progress-current").textContent=latest.weight.toFixed(1)+" lb";
-  const goals = {
-    start:START_WEIGHT,target:FINAL_GOAL_WEIGHT,current:latest.weight,
-    lost:START_WEIGHT-latest.weight,remaining:latest.weight-FINAL_GOAL_WEIGHT
-  };
+  
+  const isLoss = dynamicStartWeight >= dynamicGoalWeight;
+  const moved = isLoss ? (dynamicStartWeight - latest.weight) : (latest.weight - dynamicStartWeight);
+  const remaining = Math.max(0, isLoss ? (latest.weight - dynamicGoalWeight) : (dynamicGoalWeight - latest.weight));
+
   document.getElementById("weight-summary").innerHTML=`
-    <div class="history-row"><span>Lost</span><strong>${goals.lost.toFixed(1)} lb</strong></div>
-    <div class="history-row"><span>Remaining</span><strong>${goals.remaining.toFixed(1)} lb</strong></div>
-    <div class="history-row"><span>Latest weigh-in</span><strong>${latest.shortDate}</strong></div>
+    <div class="history-row"><span>${isLoss ? "Lost" : "Gained"}</span><strong>${moved.toFixed(1)} lb</strong></div>
+    <div class="history-row"><span>Remaining</span><strong>${remaining.toFixed(1)} lb</strong></div>
+    <div class="history-row"><span>Latest weigh-in</span><strong>${latest.shortDate}${latest.actualRaw === "x" ? " (est.)" : ""}</strong></div>
     <div class="history-row"><span>Latest weekly change</span><strong>${Number.isFinite(latest.change)?(latest.change>0?"+":"")+latest.change.toFixed(1)+" lb":"—"}</strong></div>
   `;
   drawCharts();
