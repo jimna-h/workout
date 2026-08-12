@@ -14,6 +14,7 @@
             --text-muted: #94a3b8;
             --border: #334155;
             --success: #22c55e;
+            --warning: #f59e0b;
         }
 
         body {
@@ -52,20 +53,78 @@
             margin: 0;
         }
 
-        .streak-card {
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .stat-card {
             background: var(--card-bg);
             border: 1px solid var(--border);
             border-radius: 12px;
             padding: 12px 16px;
             display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .stat-val {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: var(--accent);
+            margin-top: 4px;
+        }
+
+        .circuit-counter-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .streak-val {
+        .counter-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-count {
+            background: var(--border);
+            color: var(--text-main);
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
             font-size: 1.2rem;
             font-weight: bold;
-            color: var(--accent);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-count:hover {
+            background: var(--accent);
+            color: #0f172a;
+        }
+
+        .count-display {
+            font-size: 1.4rem;
+            font-weight: bold;
+            min-width: 24px;
+            text-align: center;
+            color: var(--warning);
         }
 
         .toggle-btn {
@@ -77,6 +136,8 @@
             font-size: 0.8rem;
             cursor: pointer;
             font-weight: 600;
+            width: 100%;
+            margin-top: 4px;
         }
 
         .timer-card {
@@ -90,7 +151,7 @@
         .timer-display {
             font-size: 3rem;
             font-weight: 800;
-            font-mono: monospace;
+            font-family: monospace;
             color: var(--accent);
             margin: 8px 0;
         }
@@ -126,7 +187,7 @@
         }
 
         .section-title {
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: 700;
             margin: 12px 0 8px 0;
             color: var(--accent);
@@ -201,16 +262,33 @@
         <p class="subtitle">20-Minute Daily Strength & Mobility Routine</p>
     </header>
 
-    <div class="streak-card">
-        <div>
-            <div style="font-size: 0.75rem; color: var(--text-muted);">CURRENT STREAK</div>
-            <div class="streak-val" id="streak-count">0 Days</div>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">Streak</div>
+            <div class="stat-val" id="streak-count">0 Days</div>
         </div>
-        <button class="toggle-btn" onclick="toggleDay()">Switch to Day B</button>
+        <div class="stat-card">
+            <div class="stat-label">Total Circuits</div>
+            <div class="stat-val" id="total-circuits">0 Completed</div>
+        </div>
     </div>
 
+    <div class="circuit-counter-card">
+        <div>
+            <div class="stat-label">Today's Circuits</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">Completions today</div>
+        </div>
+        <div class="counter-controls">
+            <button class="btn-count" onclick="adjustTodayCircuits(-1)">-</button>
+            <div class="count-display" id="today-circuits">0</div>
+            <button class="btn-count" onclick="adjustTodayCircuits(1)">+</button>
+        </div>
+    </div>
+
+    <button class="toggle-btn" onclick="toggleDay()">Switch Workout to Day B</button>
+
     <div class="timer-card">
-        <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;" id="timer-label">TOTAL WORKOUT TIMER</div>
+        <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;" id="timer-label">WORKOUT TIMER</div>
         <div class="timer-display" id="timer-display">20:00</div>
         <div class="controls">
             <button class="btn" id="start-btn" onclick="toggleTimer()">Start Timer</button>
@@ -229,7 +307,7 @@
         <div class="exercise-list" id="finisher-list"></div>
     </div>
 
-    <button class="finish-btn" onclick="completeWorkout()">Complete Workout & Save Streak</button>
+    <button class="finish-btn" onclick="completeWorkout()">Log Completed Session (+1 Circuit)</button>
 </div>
 
 <script>
@@ -268,18 +346,37 @@
 
     let currentDay = localStorage.getItem('workout_day') || 'A';
     let streak = parseInt(localStorage.getItem('workout_streak') || '0');
-    let timeLeft = 1200; // 20 minutes in seconds
+    let totalCircuits = parseInt(localStorage.getItem('total_circuits') || '0');
+    
+    // Track daily circuits with date check
+    let lastLogDate = localStorage.getItem('last_log_date') || '';
+    let todayDate = new Date().toISOString().slice(0, 10);
+    let todayCircuits = (lastLogDate === todayDate) ? parseInt(localStorage.getItem('today_circuits') || '0') : 0;
+
+    let timeLeft = 1200; // 20 minutes
     let timerInterval = null;
 
     function init() {
-        document.getElementById('streak-count').innerText = `${streak} Days`;
+        if (lastLogDate !== todayDate) {
+            localStorage.setItem('last_log_date', todayDate);
+            localStorage.setItem('today_circuits', '0');
+            todayCircuits = 0;
+        }
+
+        updateStatsUI();
         renderWorkout();
+    }
+
+    function updateStatsUI() {
+        document.getElementById('streak-count').innerText = `${streak} Days`;
+        document.getElementById('total-circuits').innerText = `${totalCircuits}`;
+        document.getElementById('today-circuits').innerText = `${todayCircuits}`;
     }
 
     function renderWorkout() {
         const data = workouts[currentDay];
         document.getElementById('day-title').innerText = data.title;
-        document.querySelector('.toggle-btn').innerText = `Switch to Day ${currentDay === 'A' ? 'B' : 'A'}`;
+        document.querySelector('.toggle-btn').innerText = `Switch Workout to Day ${currentDay === 'A' ? 'B' : 'A'}`;
 
         renderList('warmup-list', data.warmup);
         renderList('circuit-list', data.circuit);
@@ -289,7 +386,7 @@
     function renderList(elementId, items) {
         const container = document.getElementById(elementId);
         container.innerHTML = '';
-        items.forEach((item, index) => {
+        items.forEach((item) => {
             const div = document.createElement('div');
             div.className = 'exercise-item';
             div.onclick = () => toggleCheck(div);
@@ -309,17 +406,24 @@
         if (event.target !== checkbox) {
             checkbox.checked = !checkbox.checked;
         }
-        if (checkbox.checked) {
-            element.classList.add('completed');
-        } else {
-            element.classList.remove('completed');
-        }
+        element.classList.toggle('completed', checkbox.checked);
     }
 
     function toggleDay() {
         currentDay = currentDay === 'A' ? 'B' : 'A';
         localStorage.setItem('workout_day', currentDay);
         renderWorkout();
+    }
+
+    function adjustTodayCircuits(amount) {
+        todayCircuits = Math.max(0, todayCircuits + amount);
+        totalCircuits = Math.max(0, totalCircuits + amount);
+        
+        localStorage.setItem('today_circuits', todayCircuits);
+        localStorage.setItem('total_circuits', totalCircuits);
+        localStorage.setItem('last_log_date', todayDate);
+        
+        updateStatsUI();
     }
 
     function toggleTimer() {
@@ -361,14 +465,27 @@
     }
 
     function completeWorkout() {
-        streak++;
-        localStorage.setItem('workout_streak', streak);
-        document.getElementById('streak-count').innerText = `${streak} Days`;
+        // Increment circuit counters
+        todayCircuits++;
+        totalCircuits++;
         
-        // Auto-switch to next day's workout for tomorrow
+        // Handle daily streak logic
+        if (todayCircuits === 1) {
+            streak++;
+        }
+
+        localStorage.setItem('today_circuits', todayCircuits);
+        localStorage.setItem('total_circuits', totalCircuits);
+        localStorage.setItem('workout_streak', streak);
+        localStorage.setItem('last_log_date', todayDate);
+
+        updateStatsUI();
+        
+        // Auto-switch day and reset checkboxes
         toggleDay();
         resetTimer();
-        alert('Workout complete! Streak updated and set for your next session.');
+
+        alert(`Session logged! Today's count: ${todayCircuits} circuit(s). Switched to Day ${currentDay} for your next run!`);
     }
 
     init();
