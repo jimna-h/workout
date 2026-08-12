@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>20-Min Daily Band & Bodyweight Routine</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent: #38bdf8;
+            --accent-hover: #0284c7;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --success: #22c55e;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 16px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 480px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        header {
+            text-align: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        h1 {
+            font-size: 1.25rem;
+            margin: 0 0 4px 0;
+            color: var(--text-main);
+        }
+
+        .subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        .streak-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .streak-val {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--accent);
+        }
+
+        .toggle-btn {
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .timer-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .timer-display {
+            font-size: 3rem;
+            font-weight: 800;
+            font-mono: monospace;
+            color: var(--accent);
+            margin: 8px 0;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        button.btn {
+            background: var(--accent);
+            color: #0f172a;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+
+        button.btn:hover {
+            background: var(--accent-hover);
+        }
+
+        button.btn-sec {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 700;
+            margin: 12px 0 8px 0;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .exercise-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .exercise-item {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .exercise-item.completed {
+            opacity: 0.5;
+            border-color: var(--success);
+        }
+
+        .exercise-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--success);
+            cursor: pointer;
+        }
+
+        .ex-details {
+            flex-grow: 1;
+        }
+
+        .ex-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 2px;
+        }
+
+        .ex-sub {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .finish-btn {
+            background: var(--success);
+            color: #000;
+            border: none;
+            padding: 14px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 1rem;
+            width: 100%;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1 id="day-title">Day A: Push, Arms & Abs</h1>
+        <p class="subtitle">20-Minute Daily Strength & Mobility Routine</p>
+    </header>
+
+    <div class="streak-card">
+        <div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">CURRENT STREAK</div>
+            <div class="streak-val" id="streak-count">0 Days</div>
+        </div>
+        <button class="toggle-btn" onclick="toggleDay()">Switch to Day B</button>
+    </div>
+
+    <div class="timer-card">
+        <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;" id="timer-label">TOTAL WORKOUT TIMER</div>
+        <div class="timer-display" id="timer-display">20:00</div>
+        <div class="controls">
+            <button class="btn" id="start-btn" onclick="toggleTimer()">Start Timer</button>
+            <button class="btn-sec" onclick="resetTimer()">Reset</button>
+        </div>
+    </div>
+
+    <div>
+        <div class="section-title">1. Warm-Up (3 Mins)</div>
+        <div class="exercise-list" id="warmup-list"></div>
+
+        <div class="section-title">2. Main Circuit (14 Mins — 3 to 4 Rounds)</div>
+        <div class="exercise-list" id="circuit-list"></div>
+
+        <div class="section-title">3. Finisher (3 Mins)</div>
+        <div class="exercise-list" id="finisher-list"></div>
+    </div>
+
+    <button class="finish-btn" onclick="completeWorkout()">Complete Workout & Save Streak</button>
+</div>
+
+<script>
+    const workouts = {
+        A: {
+            title: "Day A: Push, Arms & Abs",
+            warmup: [
+                { name: "Cat-Cows & Arm Circles", detail: "1 min cat-cows + 2 mins shoulder/chest mobility" }
+            ],
+            circuit: [
+                { name: "Band-Resisted (or Slow) Push-Ups", detail: "8–12 reps | Band across upper back or 3s down" },
+                { name: "Overhead Band Shoulder Press", detail: "10–12 reps | Stand on band with bar" },
+                { name: "Standing Bar Bicep Curls", detail: "12–15 reps | Stand on band with bar" },
+                { name: "Dead Bugs or Plank Hold", detail: "30–45 sec | Press low back flat / hold tight" }
+            ],
+            finisher: [
+                { name: "Jumping Jacks Interval", detail: "3 Rounds: 30s Jumping Jacks / 30s Rest" }
+            ]
+        },
+        B: {
+            title: "Day B: Pull, Legs & Posture",
+            warmup: [
+                { name: "Deep Squat Hold & 90/90s", detail: "1 min deep squat + 2 mins hip switches" }
+            ],
+            circuit: [
+                { name: "Door-Anchored Band Rows", detail: "10–12 reps | High anchor with bar or handles" },
+                { name: "Band-Resisted Squats or Lunges", detail: "10–12 reps | Stand on band, hold handles high" },
+                { name: "Glute Bridges", detail: "12–15 reps | Squeeze glutes for 2s at top" },
+                { name: "Bicycle Crunches", detail: "10 per side | Controlled drive with core" }
+            ],
+            finisher: [
+                { name: "Step Jacks Interval", detail: "3 Rounds: 30s Step Jacks / 30s Rest" }
+            ]
+        }
+    };
+
+    let currentDay = localStorage.getItem('workout_day') || 'A';
+    let streak = parseInt(localStorage.getItem('workout_streak') || '0');
+    let timeLeft = 1200; // 20 minutes in seconds
+    let timerInterval = null;
+
+    function init() {
+        document.getElementById('streak-count').innerText = `${streak} Days`;
+        renderWorkout();
+    }
+
+    function renderWorkout() {
+        const data = workouts[currentDay];
+        document.getElementById('day-title').innerText = data.title;
+        document.querySelector('.toggle-btn').innerText = `Switch to Day ${currentDay === 'A' ? 'B' : 'A'}`;
+
+        renderList('warmup-list', data.warmup);
+        renderList('circuit-list', data.circuit);
+        renderList('finisher-list', data.finisher);
+    }
+
+    function renderList(elementId, items) {
+        const container = document.getElementById(elementId);
+        container.innerHTML = '';
+        items.forEach((item, index) => {
+            const div = document.createElement('div');
+            div.className = 'exercise-item';
+            div.onclick = () => toggleCheck(div);
+            div.innerHTML = `
+                <input type="checkbox" onclick="event.stopPropagation(); toggleCheck(this.parentElement)">
+                <div class="ex-details">
+                    <div class="ex-name">${item.name}</div>
+                    <div class="ex-sub">${item.detail}</div>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function toggleCheck(element) {
+        const checkbox = element.querySelector('input[type="checkbox"]');
+        if (event.target !== checkbox) {
+            checkbox.checked = !checkbox.checked;
+        }
+        if (checkbox.checked) {
+            element.classList.add('completed');
+        } else {
+            element.classList.remove('completed');
+        }
+    }
+
+    function toggleDay() {
+        currentDay = currentDay === 'A' ? 'B' : 'A';
+        localStorage.setItem('workout_day', currentDay);
+        renderWorkout();
+    }
+
+    function toggleTimer() {
+        const btn = document.getElementById('start-btn');
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            btn.innerText = 'Start Timer';
+        } else {
+            btn.innerText = 'Pause Timer';
+            timerInterval = setInterval(() => {
+                if (timeLeft > 0) {
+                    timeLeft--;
+                    updateTimerDisplay();
+                } else {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                    alert('20 minutes completed! Great job.');
+                }
+            }, 1000);
+        }
+    }
+
+    function resetTimer() {
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            document.getElementById('start-btn').innerText = 'Start Timer';
+        }
+        timeLeft = 1200;
+        updateTimerDisplay();
+    }
+
+    function updateTimerDisplay() {
+        const mins = Math.floor(timeLeft / 60);
+        const secs = timeLeft % 60;
+        document.getElementById('timer-display').innerText = 
+            `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    function completeWorkout() {
+        streak++;
+        localStorage.setItem('workout_streak', streak);
+        document.getElementById('streak-count').innerText = `${streak} Days`;
+        
+        // Auto-switch to next day's workout for tomorrow
+        toggleDay();
+        resetTimer();
+        alert('Workout complete! Streak updated and set for your next session.');
+    }
+
+    init();
+</script>
+
+</body>
+</html>
