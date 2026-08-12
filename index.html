@@ -578,8 +578,7 @@ function loadWeightData() {
 
       const startWeight = rows[0].weight;
       const targetWeight = Number.isFinite(latest.target) ? latest.target : startWeight;
-      const isLoss = startWeight >= targetWeight;
-
+      
       document.getElementById("weight-display").textContent = `${latest.weight.toFixed(1)} lb`;
       document.getElementById("weight-note").textContent = latest.date ? `weighed ${latest.date}${latest.actualRaw === "x" ? " (est.)" : ""}` : "from tracker";
 
@@ -588,12 +587,22 @@ function loadWeightData() {
         document.getElementById("progress-goal-display").textContent = `${targetWeight.toFixed(1)} lb`;
       }
 
+      // Directional progress evaluation
+      const isLoss = startWeight >= targetWeight;
       const totalToMove = Math.abs(startWeight - targetWeight);
-      const movedRaw = latest.weight - startWeight;
-      const remainingRaw = targetWeight - latest.weight;
       
-      const movedAbs = Math.abs(movedRaw);
-      const pct = Math.max(0, Math.min(100, (movedAbs / Math.max(0.1, totalToMove)) * 100));
+      // Calculate actual directional movement toward target goal
+      const actualProgress = isLoss 
+        ? startWeight - latest.weight 
+        : latest.weight - startWeight;
+
+      const remainingRaw = targetWeight - latest.weight;
+      const movedRaw = latest.weight - startWeight;
+      
+      // Calculate clamped percentage (floored at 0% for wrong-direction movement)
+      const pct = totalToMove === 0 
+        ? 100 
+        : Math.max(0, Math.min(100, (actualProgress / totalToMove) * 100));
 
       document.getElementById("remaining-weight").textContent = `${formatDiff(remainingRaw)} lb`;
       document.getElementById("weight-progress").style.width = `${pct}%`;
