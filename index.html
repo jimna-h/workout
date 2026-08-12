@@ -74,10 +74,11 @@ canvas{display:block;width:100%;height:190px;margin-top:8px}
 .workout-card h3{margin:0;font-size:.95rem}.workout-card p{margin:3px 0 10px;color:var(--muted);font-size:.72rem}
 .ex-list{margin:0;padding:0;list-style:none}.ex-list li{padding:7px 0;border-top:1px solid var(--border);font-size:.76rem}.ex-list span{display:block;color:var(--muted);font-size:.68rem;margin-top:2px}
 .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.68);display:flex;align-items:flex-end;justify-content:center;padding:10px;z-index:10}.modal{width:min(100%,540px);background:var(--surface);border:1px solid var(--border);border-radius:15px;padding:15px;max-height:85vh;overflow:auto}.modal h2{margin:0 0 5px}.modal p{color:var(--muted);font-size:.76rem;line-height:1.45}.modal-row{display:flex;gap:7px}.modal-row>*{flex:1}.hidden{display:none!important}.danger{color:var(--danger)!important}
-.form-group{margin-bottom:10px}.form-group label{display:block;font-size:.68rem;color:var(--muted);text-transform:uppercase;font-weight:800;margin-bottom:4px}
-.ex-goal-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.ex-goal-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
 .ex-goal-row label{font-size:.75rem;font-weight:700;flex:1}
-.ex-goal-row input{width:140px;flex:none}
+.ex-goal-input-wrap{display:flex;align-items:center;gap:6px;flex:none}
+.ex-goal-input-wrap input{width:75px;text-align:right}
+.ex-unit-label{font-size:.72rem;color:var(--muted);font-weight:700;width:68px}
 </style>
 </head>
 <body>
@@ -194,10 +195,10 @@ canvas{display:block;width:100%;height:190px;margin-top:8px}
     
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-        <h2>Exercise Target Goals</h2>
+        <h2>Target Goals</h2>
         <button class="user-toggle" onclick="toggleUserProfile()"><span id="settings-user-label">James</span> ▾</button>
       </div>
-      <p style="margin-bottom:12px">Set target goals for each exercise (e.g. 15 reps, 10 reps @ 30lb):</p>
+      <p style="margin-bottom:12px">Enter target numbers for each exercise. Units are attached automatically:</p>
       <div id="exercise-goals-container"></div>
     </div>
 
@@ -229,33 +230,33 @@ const workouts = {
     name: "Workout A",
     description: "Squat • Push • Pull • Arms • Core",
     exercises: [
-      { id:"squat", name:"Band Squat", focus:"Quads + glutes", reps:"8–15", equipment:"band", options:["20 lb","30 lb","40 lb"] },
-      { id:"pushup", name:"Push-Up", focus:"Chest + triceps + shoulders", reps:"8–15", equipment:"body", options:["Bodyweight","Easier variation","Harder variation"] },
-      { id:"row", name:"Band Row", focus:"Upper back + lats", reps:"8–15", equipment:"band", options:["20 lb","30 lb","40 lb"] },
-      { id:"curl", name:"Band Curl", focus:"Biceps", reps:"10–15", equipment:"band", options:["20 lb","30 lb","40 lb"] },
-      { id:"deadbug", name:"Dead Bug", focus:"Abs + trunk control", reps:"6–10 / side", equipment:"body", options:["Bodyweight"] }
+      { id:"squat", name:"Band Squat", focus:"Quads + glutes", defaultTarget:"8–15", unit:"reps", equipment:"band", options:["20 lb","30 lb","40 lb"] },
+      { id:"pushup", name:"Push-Up", focus:"Chest + triceps + shoulders", defaultTarget:"8–15", unit:"reps", equipment:"body", options:["Bodyweight","Easier variation","Harder variation"] },
+      { id:"row", name:"Band Row", focus:"Upper back + lats", defaultTarget:"8–15", unit:"reps", equipment:"band", options:["20 lb","30 lb","40 lb"] },
+      { id:"curl", name:"Band Curl", focus:"Biceps", defaultTarget:"10–15", unit:"reps", equipment:"band", options:["20 lb","30 lb","40 lb"] },
+      { id:"deadbug", name:"Dead Bug", focus:"Abs + trunk control", defaultTarget:"6–10", unit:"/ side", equipment:"body", options:["Bodyweight"] }
     ]
   },
   B: {
     name: "Workout B",
     description: "Hinge • Press • Pull • Shoulders • Core",
     exercises: [
-      { id:"rdl", name:"Band Romanian Deadlift", focus:"Hamstrings + glutes", reps:"8–15", equipment:"band", options:["20 lb","30 lb","40 lb"] },
-      { id:"press", name:"Band Shoulder Press", focus:"Shoulders + triceps", reps:"8–15", equipment:"band", options:["20 lb","30 lb","40 lb"] },
-      { id:"pulldown", name:"Band Lat Pulldown", focus:"Lats + upper back", reps:"8–15", equipment:"band", options:["20 lb","30 lb","40 lb"], anchor:true },
-      { id:"lateral", name:"Band Lateral Raise", focus:"Side delts", reps:"10–20", equipment:"band", options:["20 lb","30 lb","40 lb"] },
-      { id:"plank", name:"Plank", focus:"Abs + trunk stability", reps:"20–45 sec", equipment:"body", options:["Bodyweight"] }
+      { id:"rdl", name:"Band Romanian Deadlift", focus:"Hamstrings + glutes", defaultTarget:"8–15", unit:"reps", equipment:"band", options:["20 lb","30 lb","40 lb"] },
+      { id:"press", name:"Band Shoulder Press", focus:"Shoulders + triceps", defaultTarget:"8–15", unit:"reps", equipment:"band", options:["20 lb","30 lb","40 lb"] },
+      { id:"pulldown", name:"Band Lat Pulldown", focus:"Lats + upper back", defaultTarget:"8–15", unit:"reps", equipment:"band", options:["20 lb","30 lb","40 lb"], anchor:true },
+      { id:"lateral", name:"Band Lateral Raise", focus:"Side delts", defaultTarget:"10–20", unit:"reps", equipment:"band", options:["20 lb","30 lb","40 lb"] },
+      { id:"plank", name:"Plank", focus:"Abs + trunk stability", defaultTarget:"20–45", unit:"sec", equipment:"body", options:["Bodyweight"] }
     ]
   },
   C: {
     name: "Workout C",
     description: "Single Leg • Push • Pull • Arms • Core",
     exercises: [
-      { id:"lunge", name:"Reverse Lunge", focus:"Quads + glutes + balance", reps:"8–12 / leg", equipment:"body", options:["Bodyweight","Band"] },
-      { id:"pushup2", name:"Push-Up", focus:"Chest + triceps + shoulders", reps:"8–15", equipment:"body", options:["Bodyweight","Easier variation","Harder variation"] },
-      { id:"row2", name:"Band Row", focus:"Upper back + lats", reps:"8–15", equipment:"band", options:["20 lb","30 lb","40 lb"] },
-      { id:"triceps", name:"Band Triceps Extension", focus:"Triceps", reps:"10–15", equipment:"band", options:["20 lb","30 lb","40 lb"] },
-      { id:"sideplank", name:"Side Plank", focus:"Obliques + trunk stability", reps:"20–40 sec / side", equipment:"body", options:["Bodyweight"] }
+      { id:"lunge", name:"Reverse Lunge", focus:"Quads + glutes + balance", defaultTarget:"8–12", unit:"/ leg", equipment:"body", options:["Bodyweight","Band"] },
+      { id:"pushup2", name:"Push-Up", focus:"Chest + triceps + shoulders", defaultTarget:"8–15", unit:"reps", equipment:"body", options:["Bodyweight","Easier variation","Harder variation"] },
+      { id:"row2", name:"Band Row", focus:"Upper back + lats", defaultTarget:"8–15", unit:"reps", equipment:"band", options:["20 lb","30 lb","40 lb"] },
+      { id:"triceps", name:"Band Triceps Extension", focus:"Triceps", defaultTarget:"10–15", unit:"reps", equipment:"band", options:["20 lb","30 lb","40 lb"] },
+      { id:"sideplank", name:"Side Plank", focus:"Obliques + trunk stability", defaultTarget:"20–40", unit:"sec / side", equipment:"body", options:["Bodyweight"] }
     ]
   }
 };
@@ -271,10 +272,10 @@ if (!state.history) state.history = [];
 
 let currentUser = localStorage.getItem("physique_user") || "James";
 
-// User-defined exercise goals stored per profile
-let exerciseGoals = JSON.parse(localStorage.getItem("physique_exercise_goals") || "null") || {
-  James: { pushup: "15 reps", squat: "15 reps @ 30 lb" },
-  Megan: { pushup: "10 reps", squat: "12 reps" }
+// User-defined numeric values per exercise profile
+let exerciseGoals = JSON.parse(localStorage.getItem("physique_exercise_goals_v2") || "null") || {
+  James: { pushup: "15", squat: "15" },
+  Megan: { pushup: "10", squat: "12" }
 };
 
 if (!exerciseGoals[currentUser]) exerciseGoals[currentUser] = {};
@@ -284,16 +285,17 @@ let timerInterval = null;
 
 function save() {
   localStorage.setItem("physique_state", JSON.stringify(state));
-  localStorage.setItem("physique_exercise_goals", JSON.stringify(exerciseGoals));
+  localStorage.setItem("physique_exercise_goals_v2", JSON.stringify(exerciseGoals));
 }
 
 function workoutData() { return workouts[state.next]; }
 function key(ex) { return state.next + ":" + ex.id; }
 function previousLog(ex) { return state.logs[key(ex)] || null; }
 
-function getExerciseGoal(exId, defaultReps) {
+function getExerciseGoalDisplay(ex) {
   const userMap = exerciseGoals[currentUser] || {};
-  return userMap[exId] || defaultReps;
+  const val = userMap[ex.id] || ex.defaultTarget;
+  return `${val} ${ex.unit}`;
 }
 
 function render() {
@@ -318,7 +320,7 @@ function renderExercise(ex,i) {
   const options = ex.options.map(x => `<option ${old && old.resistance === x ? 'selected' : ''}>${x}</option>`).join("");
   const oldSet1 = old?.set1 || "";
   const oldSet2 = old?.set2 || "";
-  const targetGoal = getExerciseGoal(ex.id, ex.reps);
+  const targetDisplay = getExerciseGoalDisplay(ex);
   const anchor = ex.anchor ? `<div class="help">Use the door hook high on a sturdy, properly closed door. Keep the movement controlled.</div>` : "";
 
   return `
@@ -327,18 +329,18 @@ function renderExercise(ex,i) {
         <div class="ex-number">${i+1}</div>
         <div class="ex-main">
           <div class="ex-name">${ex.name}</div>
-          <div class="ex-focus">${ex.focus} • Target: <strong>${targetGoal}</strong></div>
+          <div class="ex-focus">${ex.focus} • Target: <strong>${targetDisplay}</strong></div>
           ${old ? `<div class="last">Last time: <strong>${oldSet1} / ${oldSet2}</strong>${old.resistance ? ` • ${old.resistance}` : ""}</div>` : `<div class="last">First time — start easy enough to learn the movement.</div>`}
         </div>
       </div>
       <div class="sets">
         <div class="set">
           <label>Set 1</label>
-          <input type="text" inputmode="numeric" placeholder="${oldSet1 || 'reps'}" data-set="1">
+          <input type="text" inputmode="numeric" placeholder="${oldSet1 || 'reps/sec'}" data-set="1">
         </div>
         <div class="set">
           <label>Set 2</label>
-          <input type="text" inputmode="numeric" placeholder="${oldSet2 || 'reps'}" data-set="2">
+          <input type="text" inputmode="numeric" placeholder="${oldSet2 || 'reps/sec'}" data-set="2">
         </div>
         ${ex.options.length > 1 ? `
         <div class="set full">
@@ -410,7 +412,7 @@ function openMinimum() {
     <h2>Minimum workout</h2>
     <p>If life only gives you a few minutes, do <strong>one set of each</strong>. That's enough to keep the habit alive.</p>
     <div class="card">
-      ${w.exercises.map((e,i) => `<p style="margin:7px 0"><strong>${i+1}. ${e.name}</strong> — ${getExerciseGoal(e.id, e.reps)}</p>`).join("")}
+      ${w.exercises.map((e,i) => `<p style="margin:7px 0"><strong>${i+1}. ${e.name}</strong> — ${getExerciseGoalDisplay(e)}</p>`).join("")}
     </div>
     <p>When you're done, mark the normal workout complete.</p>
     <div class="modal-row"><button class="small-btn primary" onclick="closeModal()">Got it</button></div>
@@ -498,7 +500,10 @@ function renderSettingsExerciseGoals() {
   container.innerHTML = allEx.map(e => `
     <div class="ex-goal-row">
       <label>${e.name}</label>
-      <input type="text" class="settings-input" placeholder="${e.reps}" value="${userMap[e.id] || ''}" onchange="saveExerciseGoal('${e.id}', this.value)">
+      <div class="ex-goal-input-wrap">
+        <input type="text" inputmode="numeric" class="settings-input" placeholder="${e.defaultTarget}" value="${userMap[e.id] || ''}" onchange="saveExerciseGoal('${e.id}', this.value)">
+        <span class="ex-unit-label">${e.unit}</span>
+      </div>
     </div>
   `).join("");
 }
@@ -642,13 +647,13 @@ function renderWorkoutInfo() {
       <h3>${w.name}</h3>
       <p>${w.description}</p>
       <ul class="ex-list">
-        ${w.exercises.map(e => `<li><strong>${e.name}</strong><span>${e.focus} • Target: ${getExerciseGoal(e.id, e.reps)}${e.anchor ? " • door anchor" : ""}</span></li>`).join("")}
+        ${w.exercises.map(e => `<li><strong>${e.name}</strong><span>${e.focus} • Target: ${getExerciseGoalDisplay(e)}${e.anchor ? " • door anchor" : ""}</span></li>`).join("")}
       </ul>
     </div>
   `).join("") + `
     <div class="card">
       <h2>Progression</h2>
-      <p>Most exercises use a rep range. When you hit the top of your target goal on both sets with good form, increase resistance or rep targets in Settings.</p>
+      <p>Most exercises use a rep range. When you hit the top of your target goal on both sets with good form, increase resistance or update target numbers in Settings.</p>
     </div>
   `;
 }
