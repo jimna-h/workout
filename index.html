@@ -274,7 +274,6 @@ if (!state.history) state.history = [];
 
 let currentUser = localStorage.getItem("physique_user") || "James";
 
-// Goals formatted as: { reps: "15", resistance: "40 lb" }
 let exerciseGoals = JSON.parse(localStorage.getItem("physique_exercise_goals_v3") || "null") || {
   James: { pushup: { reps: "15", resistance: "Bodyweight" }, squat: { reps: "15", resistance: "40 lb" } },
   Megan: { pushup: { reps: "10", resistance: "Easier variation" }, squat: { reps: "12", resistance: "20 lb" } }
@@ -298,7 +297,7 @@ function getExerciseGoalDisplay(ex) {
   const userMap = exerciseGoals[currentUser] || {};
   const goalObj = userMap[ex.id] || {};
   const reps = goalObj.reps || ex.defaultTarget;
-  const res = goalObj.resistance || "";
+  const res = goalObj.resistance || (ex.options ? ex.options[0] : "");
   
   return `${reps} ${ex.unit}${res ? ` @ ${res}` : ""}`;
 }
@@ -505,7 +504,11 @@ function renderSettingsExerciseGoals() {
   container.innerHTML = allEx.map(e => {
     const curGoal = userMap[e.id] || {};
     const repsVal = curGoal.reps !== undefined ? curGoal.reps : '';
-    const resVal = curGoal.resistance !== undefined ? curGoal.resistance : '';
+    const resVal = curGoal.resistance !== undefined ? curGoal.resistance : (e.options ? e.options[0] : '');
+
+    const optionsHtml = (e.options || []).map(opt => 
+      `<option value="${opt}" ${resVal === opt ? 'selected' : ''}>${opt}</option>`
+    ).join("");
 
     return `
       <div class="ex-goal-row" style="display:flex; flex-direction:column; gap:6px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.08)">
@@ -516,7 +519,9 @@ function renderSettingsExerciseGoals() {
             <span class="ex-unit-label">${e.unit}</span>
           </div>
           <div class="ex-goal-input-wrap">
-            <input type="text" class="settings-input" placeholder="e.g. 50 lb" value="${resVal}" onchange="saveExerciseGoal('${e.id}', 'resistance', this.value)">
+            <select class="settings-input" style="width:100%; height:100%; box-sizing:border-box;" onchange="saveExerciseGoal('${e.id}', 'resistance', this.value)">
+              ${optionsHtml}
+            </select>
           </div>
         </div>
       </div>
