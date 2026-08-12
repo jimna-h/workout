@@ -225,15 +225,17 @@ canvas{display:block;width:100%;height:190px;margin-top:8px}
 </div>
 
 <script>
+const BAND_OPTIONS = ["20 lb", "30 lb", "40 lb", "50 lb", "60 lb", "70 lb", "80 lb", "90 lb"];
+
 const workouts = {
   A: {
     name: "Workout A",
     description: "Squat • Push • Pull • Arms • Core",
     exercises: [
-      { id:"squat", name:"Band Squat", focus:"Quads + glutes", defaultTarget:"8–15", unit:"reps", equipment:"band", options:["20 lb","30 lb","40 lb"] },
+      { id:"squat", name:"Band Squat", focus:"Quads + glutes", defaultTarget:"8–15", unit:"reps", equipment:"band", options: BAND_OPTIONS },
       { id:"pushup", name:"Push-Up", focus:"Chest + triceps + shoulders", defaultTarget:"8–15", unit:"reps", equipment:"body", options:["Bodyweight","Easier variation","Harder variation"] },
-      { id:"row", name:"Band Row", focus:"Upper back + lats", defaultTarget:"8–15", unit:"reps", equipment:"band", options:["20 lb","30 lb","40 lb"] },
-      { id:"curl", name:"Band Curl", focus:"Biceps", defaultTarget:"10–15", unit:"reps", equipment:"band", options:["20 lb","30 lb","40 lb"] },
+      { id:"row", name:"Band Row", focus:"Upper back + lats", defaultTarget:"8–15", unit:"reps", equipment:"band", options: BAND_OPTIONS },
+      { id:"curl", name:"Band Curl", focus:"Biceps", defaultTarget:"10–15", unit:"reps", equipment:"band", options: BAND_OPTIONS },
       { id:"deadbug", name:"Dead Bug", focus:"Abs + trunk control", defaultTarget:"6–10", unit:"/ side", equipment:"body", options:["Bodyweight"] }
     ]
   },
@@ -241,10 +243,10 @@ const workouts = {
     name: "Workout B",
     description: "Hinge • Press • Pull • Shoulders • Core",
     exercises: [
-      { id:"rdl", name:"Band Romanian Deadlift", focus:"Hamstrings + glutes", defaultTarget:"8–15", unit:"reps", equipment:"band", options:["20 lb","30 lb","40 lb"] },
-      { id:"press", name:"Band Shoulder Press", focus:"Shoulders + triceps", defaultTarget:"8–15", unit:"reps", equipment:"band", options:["20 lb","30 lb","40 lb"] },
-      { id:"pulldown", name:"Band Lat Pulldown", focus:"Lats + upper back", defaultTarget:"8–15", unit:"reps", equipment:"band", options:["20 lb","30 lb","40 lb"], anchor:true },
-      { id:"lateral", name:"Band Lateral Raise", focus:"Side delts", defaultTarget:"10–20", unit:"reps", equipment:"band", options:["20 lb","30 lb","40 lb"] },
+      { id:"rdl", name:"Band Romanian Deadlift", focus:"Hamstrings + glutes", defaultTarget:"8–15", unit:"reps", equipment:"band", options: BAND_OPTIONS },
+      { id:"press", name:"Band Shoulder Press", focus:"Shoulders + triceps", defaultTarget:"8–15", unit:"reps", equipment:"band", options: BAND_OPTIONS },
+      { id:"pulldown", name:"Band Lat Pulldown", focus:"Lats + upper back", defaultTarget:"8–15", unit:"reps", equipment:"band", options: BAND_OPTIONS, anchor:true },
+      { id:"lateral", name:"Band Lateral Raise", focus:"Side delts", defaultTarget:"10–20", unit:"reps", equipment:"band", options: BAND_OPTIONS },
       { id:"plank", name:"Plank", focus:"Abs + trunk stability", defaultTarget:"20–45", unit:"sec", equipment:"body", options:["Bodyweight"] }
     ]
   },
@@ -252,10 +254,10 @@ const workouts = {
     name: "Workout C",
     description: "Single Leg • Push • Pull • Arms • Core",
     exercises: [
-      { id:"lunge", name:"Reverse Lunge", focus:"Quads + glutes + balance", defaultTarget:"8–12", unit:"/ leg", equipment:"body", options:["Bodyweight","Band"] },
+      { id:"lunge", name:"Reverse Lunge", focus:"Quads + glutes + balance", defaultTarget:"8–12", unit:"/ leg", equipment:"body", options:["Bodyweight", ...BAND_OPTIONS] },
       { id:"pushup2", name:"Push-Up", focus:"Chest + triceps + shoulders", defaultTarget:"8–15", unit:"reps", equipment:"body", options:["Bodyweight","Easier variation","Harder variation"] },
-      { id:"row2", name:"Band Row", focus:"Upper back + lats", defaultTarget:"8–15", unit:"reps", equipment:"band", options:["20 lb","30 lb","40 lb"] },
-      { id:"triceps", name:"Band Triceps Extension", focus:"Triceps", defaultTarget:"10–15", unit:"reps", equipment:"band", options:["20 lb","30 lb","40 lb"] },
+      { id:"row2", name:"Band Row", focus:"Upper back + lats", defaultTarget:"8–15", unit:"reps", equipment:"band", options: BAND_OPTIONS },
+      { id:"triceps", name:"Band Triceps Extension", focus:"Triceps", defaultTarget:"10–15", unit:"reps", equipment:"band", options: BAND_OPTIONS },
       { id:"sideplank", name:"Side Plank", focus:"Obliques + trunk stability", defaultTarget:"20–40", unit:"sec / side", equipment:"body", options:["Bodyweight"] }
     ]
   }
@@ -272,9 +274,10 @@ if (!state.history) state.history = [];
 
 let currentUser = localStorage.getItem("physique_user") || "James";
 
-let exerciseGoals = JSON.parse(localStorage.getItem("physique_exercise_goals_v2") || "null") || {
-  James: { pushup: "15", squat: "15" },
-  Megan: { pushup: "10", squat: "12" }
+// Goals formatted as: { reps: "15", resistance: "40 lb" }
+let exerciseGoals = JSON.parse(localStorage.getItem("physique_exercise_goals_v3") || "null") || {
+  James: { pushup: { reps: "15", resistance: "Bodyweight" }, squat: { reps: "15", resistance: "40 lb" } },
+  Megan: { pushup: { reps: "10", resistance: "Easier variation" }, squat: { reps: "12", resistance: "20 lb" } }
 };
 
 if (!exerciseGoals[currentUser]) exerciseGoals[currentUser] = {};
@@ -284,7 +287,7 @@ let timerInterval = null;
 
 function save() {
   localStorage.setItem("physique_state", JSON.stringify(state));
-  localStorage.setItem("physique_exercise_goals_v2", JSON.stringify(exerciseGoals));
+  localStorage.setItem("physique_exercise_goals_v3", JSON.stringify(exerciseGoals));
 }
 
 function workoutData() { return workouts[state.next]; }
@@ -293,8 +296,11 @@ function previousLog(ex) { return state.logs[key(ex)] || null; }
 
 function getExerciseGoalDisplay(ex) {
   const userMap = exerciseGoals[currentUser] || {};
-  const val = userMap[ex.id] || ex.defaultTarget;
-  return `${val} ${ex.unit}`;
+  const goalObj = userMap[ex.id] || {};
+  const reps = goalObj.reps || ex.defaultTarget;
+  const res = goalObj.resistance || "";
+  
+  return `${reps} ${ex.unit}${res ? ` @ ${res}` : ""}`;
 }
 
 function render() {
@@ -496,20 +502,33 @@ function renderSettingsExerciseGoals() {
   const allEx = getAllExercises();
   const userMap = exerciseGoals[currentUser] || {};
 
-  container.innerHTML = allEx.map(e => `
-    <div class="ex-goal-row">
-      <label>${e.name}</label>
-      <div class="ex-goal-input-wrap">
-        <input type="text" inputmode="numeric" class="settings-input" placeholder="${e.defaultTarget}" value="${userMap[e.id] || ''}" onchange="saveExerciseGoal('${e.id}', this.value)">
-        <span class="ex-unit-label">${e.unit}</span>
+  container.innerHTML = allEx.map(e => {
+    const curGoal = userMap[e.id] || {};
+    const repsVal = curGoal.reps !== undefined ? curGoal.reps : '';
+    const resVal = curGoal.resistance !== undefined ? curGoal.resistance : '';
+
+    return `
+      <div class="ex-goal-row" style="display:flex; flex-direction:column; gap:6px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.08)">
+        <label style="font-weight:600">${e.name}</label>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+          <div class="ex-goal-input-wrap">
+            <input type="text" inputmode="numeric" class="settings-input" placeholder="Target Reps (${e.defaultTarget})" value="${repsVal}" onchange="saveExerciseGoal('${e.id}', 'reps', this.value)">
+            <span class="ex-unit-label">${e.unit}</span>
+          </div>
+          <div class="ex-goal-input-wrap">
+            <input type="text" class="settings-input" placeholder="e.g. 50 lb" value="${resVal}" onchange="saveExerciseGoal('${e.id}', 'resistance', this.value)">
+          </div>
+        </div>
       </div>
-    </div>
-  `).join("");
+    `;
+  }).join("");
 }
 
-function saveExerciseGoal(exId, value) {
+function saveExerciseGoal(exId, field, value) {
   if (!exerciseGoals[currentUser]) exerciseGoals[currentUser] = {};
-  exerciseGoals[currentUser][exId] = value.trim();
+  if (!exerciseGoals[currentUser][exId]) exerciseGoals[currentUser][exId] = {};
+  
+  exerciseGoals[currentUser][exId][field] = value.trim();
   save();
   render();
 }
@@ -542,7 +561,6 @@ function loadGoogleSheet(sheetName, query, callback) {
 function loadWeightData() {
   syncProfileUI();
 
-  // 1) Grab Target Weight from Goals tab (Col B for James, Col C for Megan where Row Label = 'Target Weight')
   const goalCol = currentUser === "James" ? "B" : "C";
   loadGoogleSheet(
     "Goals",
@@ -554,7 +572,6 @@ function loadWeightData() {
         if (val != null && !isNaN(val)) targetWeightFromGoals = Number(val);
       }
 
-      // 2) Fetch tracking history from Tracking tab
       const tqQuery = currentUser === "James" 
         ? "select A,B,C,D,E where B is not null order by A asc" 
         : "select A,H,F,G,E where H is not null order by A asc";
@@ -590,7 +607,6 @@ function loadWeightData() {
 
           const startWeight = rows[0].weight;
           
-          // Primary target is pulled from Goals tab; falls back to Tracking line target or start weight
           const finalGoalTarget = Number.isFinite(targetWeightFromGoals) 
             ? targetWeightFromGoals 
             : (Number.isFinite(latest.target) ? latest.target : startWeight);
