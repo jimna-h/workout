@@ -255,8 +255,8 @@ const workouts = {
     description: "Single Leg • Push • Pull • Arms • Core",
     exercises: [
       { id:"lunge", name:"Reverse Lunge", focus:"Quads + glutes + balance", defaultTarget:"8–12", unit:"/ leg", equipment:"body", options:["Bodyweight", ...BAND_OPTIONS] },
-      { id:"pushup2", name:"Push-Up", focus:"Chest + triceps + shoulders", defaultTarget:"8–15", unit:"reps", equipment:"body", options:["Bodyweight","Easier variation","Harder variation"] },
-      { id:"row2", name:"Band Row", focus:"Upper back + lats", defaultTarget:"8–15", unit:"reps", equipment:"band", options: BAND_OPTIONS },
+      { id:"pushup", name:"Push-Up", focus:"Chest + triceps + shoulders", defaultTarget:"8–15", unit:"reps", equipment:"body", options:["Bodyweight","Easier variation","Harder variation"] },
+      { id:"row", name:"Band Row", focus:"Upper back + lats", defaultTarget:"8–15", unit:"reps", equipment:"band", options: BAND_OPTIONS },
       { id:"triceps", name:"Band Triceps Extension", focus:"Triceps", defaultTarget:"10–15", unit:"reps", equipment:"band", options: BAND_OPTIONS },
       { id:"sideplank", name:"Side Plank", focus:"Obliques + trunk stability", defaultTarget:"20–40", unit:"sec / side", equipment:"body", options:["Bodyweight"] }
     ]
@@ -274,10 +274,21 @@ if (!state.history) state.history = [];
 
 let currentUser = localStorage.getItem("physique_user") || "James";
 
-let exerciseGoals = JSON.parse(localStorage.getItem("physique_exercise_goals_v3") || "null") || {
+// Default starter goals
+const defaultExerciseGoals = {
   James: { pushup: { reps: "15", resistance: "Bodyweight" }, squat: { reps: "15", resistance: "40 lb" } },
   Megan: { pushup: { reps: "10", resistance: "Easier variation" }, squat: { reps: "12", resistance: "20 lb" } }
 };
+
+// Smart merge: load existing saved goals without letting code defaults override user edits
+let storedGoals = JSON.parse(localStorage.getItem("physique_exercise_goals_v4") || "null");
+
+let exerciseGoals = storedGoals || defaultExerciseGoals;
+if (storedGoals) {
+  Object.keys(defaultExerciseGoals).forEach(u => {
+    if (!exerciseGoals[u]) exerciseGoals[u] = defaultExerciseGoals[u];
+  });
+}
 
 if (!exerciseGoals[currentUser]) exerciseGoals[currentUser] = {};
 
@@ -286,7 +297,7 @@ let timerInterval = null;
 
 function save() {
   localStorage.setItem("physique_state", JSON.stringify(state));
-  localStorage.setItem("physique_exercise_goals_v3", JSON.stringify(exerciseGoals));
+  localStorage.setItem("physique_exercise_goals_v4", JSON.stringify(exerciseGoals));
 }
 
 function workoutData() { return workouts[state.next]; }
@@ -296,8 +307,8 @@ function previousLog(ex) { return state.logs[key(ex)] || null; }
 function getExerciseGoalDisplay(ex) {
   const userMap = exerciseGoals[currentUser] || {};
   const goalObj = userMap[ex.id] || {};
-  const reps = goalObj.reps || ex.defaultTarget;
-  const res = goalObj.resistance || (ex.options ? ex.options[0] : "");
+  const reps = goalObj.reps !== undefined && goalObj.reps !== "" ? goalObj.reps : ex.defaultTarget;
+  const res = goalObj.resistance !== undefined && goalObj.resistance !== "" ? goalObj.resistance : (ex.options ? ex.options[0] : "");
   
   return `${reps} ${ex.unit}${res ? ` @ ${res}` : ""}`;
 }
