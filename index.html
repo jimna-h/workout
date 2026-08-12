@@ -440,6 +440,8 @@ function resetTimer() {
 // Live weight data from Google Sheets
 // ------------------------------
 const SHEET_ID = "13A4-e2_2WH10vcfF2ZM_CuJWVBP_teugCpyV7soEp-U";
+const FINAL_GOAL_WEIGHT = 165;
+const START_WEIGHT = 203.2;
 
 function loadGoogleSheet(sheetName, query, callback) {
   const callbackName = "sheetCallback_" + Date.now() + "_" + Math.floor(Math.random() * 100000);
@@ -498,13 +500,12 @@ function loadWeightData() {
       document.getElementById("weight-display").textContent = `${latest.weight.toFixed(1)} lb`;
       document.getElementById("weight-note").textContent = latest.date ? `weighed ${latest.date}` : "from your tracker";
 
-      const target = Number.isFinite(latest.target) ? latest.target : 165;
-      document.getElementById("target-weight").textContent = `${target.toFixed(0)} lb`;
+      // Focus strictly on Ultimate End Goal (165 lb)
+      document.getElementById("target-weight").textContent = `${FINAL_GOAL_WEIGHT.toFixed(0)} lb`;
 
-      const start = 203.2;
-      const totalToLose = start - target;
-      const lost = start - latest.weight;
-      const remaining = Math.max(0, latest.weight - target);
+      const totalToLose = START_WEIGHT - FINAL_GOAL_WEIGHT;
+      const lost = START_WEIGHT - latest.weight;
+      const remaining = Math.max(0, latest.weight - FINAL_GOAL_WEIGHT);
       const pct = Math.max(0, Math.min(100, (lost / totalToLose) * 100));
 
       document.getElementById("remaining-weight").textContent = `${remaining.toFixed(1)} lb`;
@@ -513,8 +514,9 @@ function loadWeightData() {
         `${lost.toFixed(1)} lb lost of ${totalToLose.toFixed(1)} lb goal (${Math.round(pct)}%)`;
       document.getElementById("weight-date").textContent = latest.date || "";
 
+      const weeklyTargetText = Number.isFinite(latest.target) ? ` (Weekly Target: ${latest.target.toFixed(1)} lb)` : "";
       document.getElementById("weight-trend").innerHTML =
-        `<strong>Latest weekly change:</strong> ${Number.isFinite(latest.change) ? (latest.change > 0 ? "+" : "") + latest.change.toFixed(1) + " lb" : "—"}.`;
+        `<strong>Latest weekly change:</strong> ${Number.isFinite(latest.change) ? (latest.change > 0 ? "+" : "") + latest.change.toFixed(1) + " lb" : "—"}${weeklyTargetText}.`;
 
       updateProgressPage(rows);
     }
@@ -531,18 +533,22 @@ function loadWeightData() {
         const b = r.c?.[1]?.v;
         if (a != null) goals[String(a).trim()] = b;
       });
-      const target = Number(goals["Target Weight"]);
-      const current = Number(goals["Current Weight"]);
-      const remaining = Number(goals["Remaining Change"]);
-      if (Number.isFinite(target)) document.getElementById("target-weight").textContent = `${target.toFixed(0)} lb`;
-      if (Number.isFinite(current)) document.getElementById("weight-display").textContent = `${current.toFixed(1)} lb`;
-      if (Number.isFinite(remaining)) document.getElementById("remaining-weight").textContent = `${Math.abs(remaining).toFixed(1)} lb`;
+
+      const weeklyTarget = Number(goals["Target Weight"]);
       const weeklyActual = Number(goals["Weekly Actual"]);
-      const weeklyGoal = Number(goals["Remaining Weekly Goal"]);
-      if (Number.isFinite(weeklyActual) && Number.isFinite(weeklyGoal)) {
-        document.getElementById("weight-trend").innerHTML =
-          `<strong>Weekly trend:</strong> ${weeklyActual.toFixed(2)} lb/week. Target from here: ${Math.abs(weeklyGoal).toFixed(2)} lb/week.`;
+      const weeklyGoalRate = Number(goals["Remaining Weekly Goal"]);
+
+      let trendText = "";
+      if (Number.isFinite(weeklyActual) && Number.isFinite(weeklyGoalRate)) {
+        trendText = `<strong>Weekly trend:</strong> ${weeklyActual.toFixed(2)} lb/wk. Target pace: ${Math.abs(weeklyGoalRate).toFixed(2)} lb/wk.`;
       }
+      if (Number.isFinite(weeklyTarget)) {
+        trendText += ` <span style="color:var(--muted)">(This week's target: ${weeklyTarget.toFixed(1)} lb)</span>`;
+      }
+      if (trendText) {
+        document.getElementById("weight-trend").innerHTML = trendText;
+      }
+
       drawCharts();
     }
   );
@@ -618,7 +624,7 @@ function drawLineChart(canvasId, data, opts) {
     if((data.length-1)%step!==0) ctx.fillText(data[data.length-1].label,x(data.length-1)-13,h-7);
   }
 
-  // Draw target/goal line if provided (Tracking!D)
+  // Draw target line if provided (Tracking!D)
   const hasTarget = data.some(p => Number.isFinite(p.target));
   if (hasTarget) {
     ctx.strokeStyle = "#e77c7c"; ctx.lineWidth = 1.5; ctx.setLineDash([4, 4]); ctx.beginPath();
@@ -714,8 +720,8 @@ function updateProgressPage(dataRows) {
   if(!latest)return;
   document.getElementById("progress-current").textContent=latest.weight.toFixed(1)+" lb";
   const goals = {
-    start:203.2,target:165,current:latest.weight,
-    lost:203.2-latest.weight,remaining:latest.weight-165
+    start:START_WEIGHT,target:FINAL_GOAL_WEIGHT,current:latest.weight,
+    lost:START_WEIGHT-latest.weight,remaining:latest.weight-FINAL_GOAL_WEIGHT
   };
   document.getElementById("weight-summary").innerHTML=`
     <div class="history-row"><span>Lost</span><strong>${goals.lost.toFixed(1)} lb</strong></div>
